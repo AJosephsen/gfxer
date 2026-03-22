@@ -1,12 +1,5 @@
-// =============================================================
-// Replace this with your actual OpenAI API key
-// =============================================================
-export const HARDCODED_API_KEY = 'sk-YOUR-KEY-HERE';
-// =============================================================
-
-// In dev mode, requests go through Vite's proxy (/openai → https://api.openai.com)
-// so the key is never sent cross-origin from the browser.
-const BASE = '/openai/v1';
+// Direct browser → OpenAI (CORS is supported by api.openai.com)
+const BASE = 'https://api.openai.com/v1';
 
 export type ImageSize = '256x256' | '512x512' | '1024x1024';
 
@@ -17,7 +10,7 @@ export interface GenerateResult {
 export async function generateImage(
   prompt: string,
   size: ImageSize = '1024x1024',
-  apiKey: string = HARDCODED_API_KEY,
+  apiKey: string,
 ): Promise<GenerateResult> {
   const res = await fetch(`${BASE}/images/generations`, {
     method: 'POST',
@@ -58,7 +51,7 @@ export async function editImage(
   maskBlob: Blob,
   prompt: string,
   size: ImageSize = '1024x1024',
-  apiKey: string = HARDCODED_API_KEY,
+  apiKey: string,
 ): Promise<GenerateResult> {
   const fd = new FormData();
   fd.append('model', 'gpt-image-1');

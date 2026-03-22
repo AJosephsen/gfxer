@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import MaskCanvas, { type MaskCanvasHandle } from './MaskCanvas';
-import { generateImage, editImage, HARDCODED_API_KEY, type ImageSize } from './api';
+import { generateImage, editImage, type ImageSize } from './api';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -12,11 +12,9 @@ interface HistoryEntry {
 // ── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  // API key (defaults to the hardcoded value; user can override in UI)
-  const [apiKey, setApiKey] = useState(
-    () => localStorage.getItem('gfxer_api_key') ?? HARDCODED_API_KEY,
-  );
-  const [showKeyPanel, setShowKeyPanel] = useState(false);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('gfxer_api_key') ?? '');
+  // Show key panel automatically when no key is stored
+  const [showKeyPanel, setShowKeyPanel] = useState(() => !localStorage.getItem('gfxer_api_key'));
 
   // Current image displayed in the editor
   const [currentImage, setCurrentImage] = useState<string | null>(null);
@@ -55,6 +53,7 @@ export default function App() {
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleGenerate = async () => {
+    if (!apiKey) { setShowKeyPanel(true); return; }
     if (!genPrompt.trim()) return;
     setError(null);
     setLoading('generate');
@@ -70,6 +69,7 @@ export default function App() {
   };
 
   const handleEdit = async () => {
+    if (!apiKey) { setShowKeyPanel(true); return; }
     if (!currentImage || !editPrompt.trim()) return;
     if (!maskRef.current) return;
     setError(null);
@@ -105,11 +105,11 @@ export default function App() {
         </div>
         <div className="header-right">
           <button
-            className={`key-btn ${apiKey && apiKey !== HARDCODED_API_KEY ? 'key-set' : 'key-unset'}`}
+            className={`key-btn ${apiKey ? 'key-set' : 'key-unset'}`}
             onClick={() => setShowKeyPanel((v) => !v)}
             title="Configure API key"
           >
-            {apiKey && apiKey !== HARDCODED_API_KEY ? '🔑 key set' : '🔑 set api key'}
+            {apiKey ? '🔑 key set' : '🔑 set api key'}
           </button>
         </div>
       </header>
@@ -314,7 +314,7 @@ function ApiKeyPanel({
   onSave: (k: string) => void;
   onClose: () => void;
 }) {
-  const [value, setValue] = useState(current === HARDCODED_API_KEY ? '' : current);
+  const [value, setValue] = useState(current);
 
   return (
     <div className="api-key-panel">
