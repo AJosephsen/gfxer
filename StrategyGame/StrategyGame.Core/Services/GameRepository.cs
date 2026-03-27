@@ -14,7 +14,7 @@ public sealed record GameSummary(
 /// Persists game state as JSON files in a local directory.
 /// One file per game: {savesDir}/{gameId}.json
 /// </summary>
-public sealed class GameRepository
+public sealed class GameRepository : IGameRepository
 {
     private readonly string _savesDir;
 

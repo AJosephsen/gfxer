@@ -11,7 +11,7 @@ namespace StrategyGame.Core.Services;
 /// All game logic: creating games, playing cards, investing, ending rounds.
 /// Loads and saves via GameRepository; resolves card rules via CardCatalog.
 /// </summary>
-public sealed class GameService(GameRepository repo, CardCatalog catalog)
+public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 {
     // ── Game lifecycle ──────────────────────────────────────────────────────
 

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("StrategyGame.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fac35fabd35c8b56c69f3f03f6b756d4da925d3d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f39b3fed8ff39ab880fdcd306fbc3320fc39a795")]
 [assembly: System.Reflection.AssemblyProductAttribute("StrategyGame.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("StrategyGame.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

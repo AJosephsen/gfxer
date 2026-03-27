@@ -53,4 +53,27 @@ git log --oneline -5
 
 ---
 
+## Testing Protocol
+
+**Every change must be covered by tests.**
+
+1. **Write tests alongside every feature or fix** — no exceptions
+   - New feature → new test(s) covering the use case
+   - Bug fix → regression test that would have caught the bug
+
+2. **After every change, build and run all tests**:
+   ```bash
+   cd /workspaces/gfxer/StrategyGame && dotnet build && dotnet test
+   ```
+
+3. **Never commit failing tests** — fix the code or the test, not the test expectations unless requirements changed
+
+4. **Test structure**:
+   - **Unit tests**: Test `GameService` logic in isolation using an in-memory repository
+   - **Integration tests** (via MCP tools): Test full game flows through the MCP tool static methods to validate end-to-end behavior
+
+5. **Test project**: `StrategyGame/StrategyGame.Tests/`
+
+---
+
 **Last Updated**: March 27, 2026
