@@ -11,7 +11,7 @@ public static class DeckTools
     [McpServerTool(Name = "draw_card")]
     [Description(
         "Draw a random land card from the map deck and add it to your hand. " +
-        $"Costs {ResourceAmount.DrawCardFocusCost} Focus. " +
+        "Costs 1 Focus. " +
         "You earn 8 Focus each night (capped at 14 total).")]
     public static string DrawCard(
         GameService gameService,

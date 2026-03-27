@@ -1,5 +1,5 @@
-using StrategyGame.Core.Models.Board;
 using StrategyGame.Core.Models.Cards;
+using BoardModel = StrategyGame.Core.Models.Board.Board;
 
 namespace StrategyGame.Core.Models.Game;
 
@@ -9,7 +9,7 @@ public sealed class GameState
     public required string PlayerName { get; set; }
     public int Round { get; set; } = 1;
 
-    public Board Board { get; set; } = new();
+    public BoardModel Board { get; set; } = new();
 
     /// <summary>Cards currently in the player's hand (mix of land and building cards).</summary>
     public List<CardBase> Hand { get; set; } = [];
