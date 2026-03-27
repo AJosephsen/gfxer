@@ -1,0 +1,66 @@
+{
+  "cards": [
+    {
+      "type": "land",
+      "id": "land_forest",
+      "name": "Forest",
+      "description": "Dense woodland. Suitable terrain for most buildings.",
+      "terrain": "Forest",
+      "focusCost": 3,
+      "investCost": { "food": 2, "people": 0 }
+    },
+    {
+      "type": "land",
+      "id": "land_plains",
+      "name": "Plains",
+      "description": "Open grassland. Ideal for farming.",
+      "terrain": "Plains",
+      "focusCost": 3,
+      "investCost": { "food": 2, "people": 0 }
+    },
+    {
+      "type": "land",
+      "id": "land_hill",
+      "name": "Hill",
+      "description": "Rocky elevated terrain. Hard to farm but defensible.",
+      "terrain": "Hill",
+      "focusCost": 3,
+      "investCost": { "food": 2, "people": 0 }
+    },
+    {
+      "type": "land",
+      "id": "land_beach",
+      "name": "Beach",
+      "description": "Sandy coastal terrain. Good for trade routes.",
+      "terrain": "Beach",
+      "focusCost": 3,
+      "investCost": { "food": 2, "people": 0 }
+    },
+    {
+      "type": "building",
+      "id": "building_settlement",
+      "name": "Settlement",
+      "description": "A small community of settlers. Produces people each round but needs food to sustain.",
+      "buildingType": "Settlement",
+      "allowedTerrains": [],
+      "focusCost": 4,
+      "playCost": { "food": 0, "people": 0 },
+      "upkeep":   { "food": 1, "people": 0 },
+      "production": { "food": 0, "people": 2 },
+      "investCost": { "food": 2, "people": 2 }
+    },
+    {
+      "type": "building",
+      "id": "building_farm",
+      "name": "Farm",
+      "description": "Agricultural fields tended by your people. Produces food each round.",
+      "buildingType": "Farm",
+      "allowedTerrains": ["Plains", "Forest"],
+      "focusCost": 4,
+      "playCost": { "food": 0, "people": 3 },
+      "upkeep":   { "food": 0, "people": 1 },
+      "production": { "food": 3, "people": 0 },
+      "investCost": { "food": 0, "people": 3 }
+    }
+  ]
+}
