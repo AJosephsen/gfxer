@@ -2,3 +2,7 @@ node_modules/
 dist/
 .env
 .env.local
+
+# .NET build outputs
+bin/
+obj/
