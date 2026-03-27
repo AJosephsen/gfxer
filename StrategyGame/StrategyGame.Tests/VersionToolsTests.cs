@@ -80,6 +80,14 @@ public sealed class VersionToolsTests
             Assert.DoesNotContain('\r', line);
     }
 
+    [Fact]
+    public void GetVersion_KnownCommitAppearsInHistory()
+    {
+        // The v0.1.0 tag commit message is known — it must appear in recent history
+        var output = VersionTools.GetVersion();
+        Assert.Contains("add unit and integration tests", output);
+    }
+
     // ── RunGit helper ─────────────────────────────────────────────────────
 
     [Fact]
