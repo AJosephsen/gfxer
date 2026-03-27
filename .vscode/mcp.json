@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "strategy-game": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": ["run", "--project", "StrategyGame/StrategyGame.McpServer/StrategyGame.McpServer.csproj", "--no-build", "-c", "Release"],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}
