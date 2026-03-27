@@ -6,6 +6,7 @@
       "name": "Forest",
       "description": "Dense woodland. Suitable terrain for most buildings.",
       "terrain": "Forest",
+      "focusCost": 3,
       "investCost": { "food": 2, "people": 0 }
     },
     {
@@ -14,6 +15,7 @@
       "name": "Plains",
       "description": "Open grassland. Ideal for farming.",
       "terrain": "Plains",
+      "focusCost": 3,
       "investCost": { "food": 2, "people": 0 }
     },
     {
@@ -22,6 +24,7 @@
       "name": "Hill",
       "description": "Rocky elevated terrain. Hard to farm but defensible.",
       "terrain": "Hill",
+      "focusCost": 3,
       "investCost": { "food": 2, "people": 0 }
     },
     {
@@ -30,6 +33,7 @@
       "name": "Beach",
       "description": "Sandy coastal terrain. Good for trade routes.",
       "terrain": "Beach",
+      "focusCost": 3,
       "investCost": { "food": 2, "people": 0 }
     },
     {
@@ -39,6 +43,7 @@
       "description": "A small community of settlers. Produces people each round but needs food to sustain.",
       "buildingType": "Settlement",
       "allowedTerrains": [],
+      "focusCost": 4,
       "playCost": { "food": 0, "people": 0 },
       "upkeep":   { "food": 1, "people": 0 },
       "production": { "food": 0, "people": 2 },
@@ -51,6 +56,7 @@
       "description": "Agricultural fields tended by your people. Produces food each round.",
       "buildingType": "Farm",
       "allowedTerrains": ["Plains", "Forest"],
+      "focusCost": 4,
       "playCost": { "food": 0, "people": 3 },
       "upkeep":   { "food": 0, "people": 1 },
       "production": { "food": 3, "people": 0 },

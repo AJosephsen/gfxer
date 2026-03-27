@@ -20,7 +20,7 @@ public sealed class GameService(GameRepository repo, CardCatalog catalog)
         var game = new GameState
         {
             PlayerName = playerName,
-            Resources = new ResourceAmount(Food: 8, People: 5)
+            Resources = new ResourceAmount(Food: 8, People: 5, Focus: ResourceAmount.MaxFocus)
         };
 
         // Starting hand: 3 random land cards + 1 Settlement
@@ -54,7 +54,15 @@ public sealed class GameService(GameRepository repo, CardCatalog catalog)
                 $"Card '{cardInstanceId}' not found in hand. Use get_hand to list available cards.");
 
         var card = game.Hand[idx];
+        var def = catalog.Get(card.DefinitionId);
         var cell = game.Board.GetCell(row, col);
+
+        // All cards cost Focus to play
+        var focusCost = new ResourceAmount(Focus: def.FocusCost);
+        if (!game.Resources.CanAfford(focusCost))
+            throw new InvalidOperationException(
+                $"Not enough Focus to play {def.Name}. Need: {def.FocusCost} Focus, Have: {game.Resources.Focus} Focus.");
+
         string message;
 
         if (card is LandCard landCard)
@@ -63,9 +71,10 @@ public sealed class GameService(GameRepository repo, CardCatalog catalog)
                 throw new InvalidOperationException(
                     $"Cell ({row},{col}) already has {catalog.Get(cell.Land.DefinitionId).Name} land. Choose an empty cell.");
 
+            game.Resources = game.Resources.Subtract(focusCost);
             cell.Land = landCard;
             game.Hand.RemoveAt(idx);
-            message = $"Placed {catalog.Get(landCard.DefinitionId).Name} land at ({row},{col}).";
+            message = $"Placed {def.Name} land at ({row},{col}). Spent: {def.FocusCost} Focus.";
         }
         else if (card is BuildingCard building)
         {
@@ -76,7 +85,7 @@ public sealed class GameService(GameRepository repo, CardCatalog catalog)
                 throw new InvalidOperationException(
                     $"Cell ({row},{col}) already has a {catalog.Get(cell.Building.DefinitionId).Name}.");
 
-            var bDef = (BuildingDefinition)catalog.Get(building.DefinitionId);
+            var bDef = (BuildingDefinition)def;
             var landDef = (LandDefinition)catalog.Get(cell.Land.DefinitionId);
 
             if (!bDef.CanBuildOn(landDef.Terrain))
@@ -84,16 +93,15 @@ public sealed class GameService(GameRepository repo, CardCatalog catalog)
                     $"{bDef.Name} cannot be built on {landDef.Terrain}. " +
                     $"Allowed terrain: {(bDef.AllowedTerrains.Length > 0 ? string.Join(", ", bDef.AllowedTerrains) : "any")}.");
 
-            if (!game.Resources.CanAfford(bDef.PlayCost))
+            var totalCost = bDef.PlayCost.Add(focusCost);
+            if (!game.Resources.CanAfford(totalCost))
                 throw new InvalidOperationException(
-                    $"Cannot afford {bDef.Name}. Need: {bDef.PlayCost}, Have: {game.Resources}.");
+                    $"Cannot afford {bDef.Name}. Need: {totalCost}, Have: {game.Resources}.");
 
-            game.Resources = game.Resources.Subtract(bDef.PlayCost);
+            game.Resources = game.Resources.Subtract(totalCost);
             cell.Building = building;
             game.Hand.RemoveAt(idx);
-            message = $"Built {bDef.Name} at ({row},{col}) on {landDef.Terrain}.";
-            if (!bDef.PlayCost.IsEmpty)
-                message += $" Paid: {bDef.PlayCost}.";
+            message = $"Built {bDef.Name} at ({row},{col}) on {landDef.Terrain}. Spent: {totalCost}.";
         }
         else
         {
@@ -102,6 +110,35 @@ public sealed class GameService(GameRepository repo, CardCatalog catalog)
 
         game.LastPlayedAt = DateTimeOffset.UtcNow;
         repo.Save(game);
+        return (game, message);
+    }
+
+    // ── Deck draw ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Draw a random land card from the infinite map deck.
+    /// Costs DrawCardFocusCost Focus.
+    /// </summary>
+    public (GameState game, string message) DrawFromDeck(string gameId)
+    {
+        var game = repo.Load(gameId);
+
+        if (game.Resources.Focus < ResourceAmount.DrawCardFocusCost)
+            throw new InvalidOperationException(
+                $"Not enough Focus to draw a card. Need: {ResourceAmount.DrawCardFocusCost} Focus, Have: {game.Resources.Focus} Focus.");
+
+        var landIds = catalog.LandCards.Select(d => d.Id).ToArray();
+        var drawnId = landIds[Random.Shared.Next(landIds.Length)];
+        var drawn = catalog.Get(drawnId);
+
+        var newCard = new LandCard { DefinitionId = drawnId };
+        game.Hand.Add(newCard);
+        game.Resources = game.Resources.Subtract(new ResourceAmount(Focus: ResourceAmount.DrawCardFocusCost));
+
+        game.LastPlayedAt = DateTimeOffset.UtcNow;
+        repo.Save(game);
+
+        var message = $"Drew {drawn.Name} from the map deck (id: {newCard.InstanceId}). Spent: {ResourceAmount.DrawCardFocusCost} Focus.";
         return (game, message);
     }
 
@@ -180,6 +217,14 @@ public sealed class GameService(GameRepository repo, CardCatalog catalog)
         if (disabledNames.Count > 0)
             sb.AppendLine($"⚠ Disabled (unpaid upkeep): {string.Join(", ", disabledNames)}");
 
+        // Focus income: earn FocusPerRound each night, capped at MaxFocus
+        var focusBefore = game.Resources.Focus;
+        game.Resources = game.Resources.AddFocus(ResourceAmount.FocusPerRound);
+        var focusGained = game.Resources.Focus - focusBefore;
+        sb.AppendLine($"Focus:         +{focusGained} (now {game.Resources.Focus}/{ResourceAmount.MaxFocus})");
+        if (focusGained < ResourceAmount.FocusPerRound)
+            sb.AppendLine($"  (capped — would have gained {ResourceAmount.FocusPerRound}, had {focusBefore})");
+
         sb.AppendLine($"Resources now: {game.Resources}");
         game.Round++;
         sb.AppendLine($"Round {game.Round} begins.");
@@ -234,7 +279,8 @@ public sealed class GameService(GameRepository repo, CardCatalog catalog)
 
             if (def is BuildingDefinition bDef)
             {
-                sb.AppendLine($"      Play cost: {(bDef.PlayCost.IsEmpty ? "free" : bDef.PlayCost.ToString())}");
+                var playCostStr = bDef.PlayCost.IsEmpty ? "" : $" + {bDef.PlayCost}";
+                sb.AppendLine($"      Play cost: {def.FocusCost} Focus{playCostStr}");
                 if (!bDef.Production.IsEmpty) sb.AppendLine($"      Produces:  {bDef.Production}/round");
                 if (!bDef.Upkeep.IsEmpty)     sb.AppendLine($"      Upkeep:    {bDef.Upkeep}/round");
                 var terrain = bDef.AllowedTerrains.Length > 0
@@ -245,7 +291,7 @@ public sealed class GameService(GameRepository repo, CardCatalog catalog)
             else if (def is LandDefinition lDef)
             {
                 sb.AppendLine($"      Terrain type: {lDef.Terrain}");
-                sb.AppendLine($"      Play cost: free");
+                sb.AppendLine($"      Play cost: {def.FocusCost} Focus");
             }
         }
         return sb.ToString().TrimEnd();
@@ -267,9 +313,14 @@ public sealed class GameService(GameRepository repo, CardCatalog catalog)
 
             if (def is BuildingDefinition bDef)
             {
-                if (!bDef.Production.IsEmpty) sb.AppendLine($"    Produces: {bDef.Production}/round");
-                if (!bDef.Upkeep.IsEmpty)     sb.AppendLine($"    Upkeep:   {bDef.Upkeep}/round");
-                if (!bDef.PlayCost.IsEmpty)   sb.AppendLine($"    Play cost (when placing): {bDef.PlayCost}");
+                var playCostStr = bDef.PlayCost.IsEmpty ? "" : $" + {bDef.PlayCost}";
+                sb.AppendLine($"    Place cost: {def.FocusCost} Focus{playCostStr}");
+                if (!bDef.Production.IsEmpty) sb.AppendLine($"    Produces:   {bDef.Production}/round");
+                if (!bDef.Upkeep.IsEmpty)     sb.AppendLine($"    Upkeep:     {bDef.Upkeep}/round");
+            }
+            else
+            {
+                sb.AppendLine($"    Place cost: {def.FocusCost} Focus");
             }
         }
         return sb.ToString().TrimEnd();
