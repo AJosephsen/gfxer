@@ -238,6 +238,173 @@ public sealed class GameServiceTests
     }
 
     [Fact]
+    public void PlayCard_Farm_SucceedsOnPlains()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        game.Resources = game.Resources with { Wood = 10 }; // Farm costs 10 Wood to place
+        var plains = new LandCard { DefinitionId = "land_plains" };
+        var farm = new BuildingCard { DefinitionId = "building_farm" };
+        game.Hand.Add(plains);
+        game.Hand.Add(farm);
+        repo.Save(game);
+        var (afterLand, _) = svc.PlayCard(game.GameId, plains.InstanceId, 2, 2);
+        var (result, _) = svc.PlayCard(game.GameId, farm.InstanceId, 2, 2);
+        Assert.NotNull(result.Board.GetCell(2, 2).Building);
+        Assert.Equal("building_farm", result.Board.GetCell(2, 2).Building!.DefinitionId);
+    }
+
+    [Fact]
+    public void PlayCard_Farm_FailsOnForest()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        // Seed cards directly so we don't exhaust People via Invest
+        var forest = new LandCard { DefinitionId = "land_forest" };
+        var farm = new BuildingCard { DefinitionId = "building_farm" };
+        game.Hand.Add(forest);
+        game.Hand.Add(farm);
+        repo.Save(game);
+        var (afterLand, _) = svc.PlayCard(game.GameId, forest.InstanceId, 2, 2);
+        Assert.Throws<InvalidOperationException>(() =>
+            svc.PlayCard(game.GameId, farm.InstanceId, 2, 2));
+    }
+
+    [Fact]
+    public void PlayCard_LumberCamp_SucceedsOnForest()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        var forest = new LandCard { DefinitionId = "land_forest" };
+        var camp = new BuildingCard { DefinitionId = "building_lumber_camp" };
+        game.Hand.Add(forest);
+        game.Hand.Add(camp);
+        repo.Save(game);
+        var (afterLand, _) = svc.PlayCard(game.GameId, forest.InstanceId, 3, 3);
+        var (result, _) = svc.PlayCard(game.GameId, camp.InstanceId, 3, 3);
+        Assert.NotNull(result.Board.GetCell(3, 3).Building);
+        Assert.Equal("building_lumber_camp", result.Board.GetCell(3, 3).Building!.DefinitionId);
+    }
+
+    [Fact]
+    public void PlayCard_LumberCamp_FailsOnPlains()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        var plains = new LandCard { DefinitionId = "land_plains" };
+        var camp = new BuildingCard { DefinitionId = "building_lumber_camp" };
+        game.Hand.Add(plains);
+        game.Hand.Add(camp);
+        repo.Save(game);
+        var (afterLand, _) = svc.PlayCard(game.GameId, plains.InstanceId, 3, 3);
+        Assert.Throws<InvalidOperationException>(() =>
+            svc.PlayCard(game.GameId, camp.InstanceId, 3, 3));
+    }
+
+    [Fact]
+    public void PlayCard_Farm_FailsWithoutEnoughWood()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        // No Wood in starting resources
+        var plains = new LandCard { DefinitionId = "land_plains" };
+        var farm = new BuildingCard { DefinitionId = "building_farm" };
+        game.Hand.Add(plains);
+        game.Hand.Add(farm);
+        repo.Save(game);
+        var (afterLand, _) = svc.PlayCard(game.GameId, plains.InstanceId, 2, 2);
+        Assert.Throws<InvalidOperationException>(() =>
+            svc.PlayCard(game.GameId, farm.InstanceId, 2, 2));
+    }
+
+    [Fact]
+    public void PlayCard_Farm_SucceedsWithEnoughWood()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        game.Resources = game.Resources with { Wood = 10 };
+        var plains = new LandCard { DefinitionId = "land_plains" };
+        var farm = new BuildingCard { DefinitionId = "building_farm" };
+        game.Hand.Add(plains);
+        game.Hand.Add(farm);
+        repo.Save(game);
+        var (afterLand, _) = svc.PlayCard(game.GameId, plains.InstanceId, 2, 2);
+        var (result, _) = svc.PlayCard(game.GameId, farm.InstanceId, 2, 2);
+        Assert.NotNull(result.Board.GetCell(2, 2).Building);
+        Assert.Equal(0, result.Resources.Wood); // 10 wood spent
+    }
+
+    [Fact]
+    public void PlayCard_FishingCamp_SucceedsOnBeach()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        var beach = new LandCard { DefinitionId = "land_beach" };
+        var camp = new BuildingCard { DefinitionId = "building_fishing_camp" };
+        game.Hand.Add(beach);
+        game.Hand.Add(camp);
+        repo.Save(game);
+        svc.PlayCard(game.GameId, beach.InstanceId, 0, 0);
+        var (result, _) = svc.PlayCard(game.GameId, camp.InstanceId, 0, 0);
+        Assert.Equal("building_fishing_camp", result.Board.GetCell(0, 0).Building!.DefinitionId);
+    }
+
+    [Fact]
+    public void PlayCard_FishingCamp_FailsOnNonBeach()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        var plains = new LandCard { DefinitionId = "land_plains" };
+        var camp = new BuildingCard { DefinitionId = "building_fishing_camp" };
+        game.Hand.Add(plains);
+        game.Hand.Add(camp);
+        repo.Save(game);
+        svc.PlayCard(game.GameId, plains.InstanceId, 0, 0);
+        Assert.Throws<InvalidOperationException>(() =>
+            svc.PlayCard(game.GameId, camp.InstanceId, 0, 0));
+    }
+
+    [Fact]
+    public void PlayCard_SheepPasture_SucceedsOnHill()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        var hill = new LandCard { DefinitionId = "land_hill" };
+        var pasture = new BuildingCard { DefinitionId = "building_sheep_pasture" };
+        game.Hand.Add(hill);
+        game.Hand.Add(pasture);
+        repo.Save(game);
+        svc.PlayCard(game.GameId, hill.InstanceId, 0, 0);
+        var (result, _) = svc.PlayCard(game.GameId, pasture.InstanceId, 0, 0);
+        Assert.Equal("building_sheep_pasture", result.Board.GetCell(0, 0).Building!.DefinitionId);
+    }
+
+    [Fact]
+    public void PlayCard_SheepPasture_FailsOnNonHill()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        var beach = new LandCard { DefinitionId = "land_beach" };
+        var pasture = new BuildingCard { DefinitionId = "building_sheep_pasture" };
+        game.Hand.Add(beach);
+        game.Hand.Add(pasture);
+        repo.Save(game);
+        svc.PlayCard(game.GameId, beach.InstanceId, 0, 0);
+        Assert.Throws<InvalidOperationException>(() =>
+            svc.PlayCard(game.GameId, pasture.InstanceId, 0, 0));
+    }
+
+    [Fact]
     public void PlayCard_Settlement_FailsIfCellAlreadyHasBuilding()
     {
         var svc = CreateService();

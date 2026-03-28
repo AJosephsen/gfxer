@@ -4,7 +4,7 @@ using StrategyGame.Core.Models;
 namespace StrategyGame.Core.Catalog;
 
 public enum TerrainType { Forest, Plains, Hill, Beach }
-public enum BuildingType { Settlement, Farm }
+public enum BuildingType { Settlement, Farm, LumberCamp, FishingCamp, SheepPasture }
 
 /// <summary>
 /// Static blueprint for a card type loaded from card-catalog.json.

@@ -258,7 +258,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
         sb.AppendLine();
         sb.AppendLine("Legend: FOR=Forest  PLN=Plains  HIL=Hill  BCH=Beach");
-        sb.AppendLine("        SET=Settlement  FRM=Farm  !=disabled  ...=empty");
+        sb.AppendLine("        SET=Settlement  FRM=Farm  LMB=LumberCamp  FSH=FishingCamp  SHP=SheepPasture  !=disabled  ...=empty");
         return sb.ToString().TrimEnd();
     }
 

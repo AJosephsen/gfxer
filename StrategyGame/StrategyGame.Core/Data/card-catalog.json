@@ -53,14 +53,53 @@
       "type": "building",
       "id": "building_farm",
       "name": "Farm",
-      "description": "Agricultural fields tended by your people. Produces food each round.",
+      "description": "Agricultural fields tended by your people. Produces up to 6 food per round depending on how many people are working it.",
       "buildingType": "Farm",
-      "allowedTerrains": ["Plains", "Forest"],
+      "allowedTerrains": ["Plains"],
       "focusCost": 4,
-      "playCost": { "food": 0, "people": 3 },
+      "playCost": { "food": 0, "people": 3, "wood": 10 },
       "upkeep":   { "food": 0, "people": 1 },
-      "production": { "food": 3, "people": 0 },
+      "production": { "food": 6, "people": 0 },
       "investCost": { "food": 0, "people": 3 }
+    },
+    {
+      "type": "building",
+      "id": "building_lumber_camp",
+      "name": "Lumber Camp",
+      "description": "Woodcutters harvest timber from nearby forest. Produces up to 4 wood per round depending on how many people are working it.",
+      "buildingType": "LumberCamp",
+      "allowedTerrains": ["Forest"],
+      "focusCost": 4,
+      "playCost": { "food": 0, "people": 2 },
+      "upkeep":   { "food": 0, "people": 0 },
+      "production": { "food": 0, "people": 0, "wood": 4 },
+      "investCost": { "food": 3, "people": 0 }
+    },
+    {
+      "type": "building",
+      "id": "building_fishing_camp",
+      "name": "Fishing Camp",
+      "description": "Fishermen work the coastline. Produces up to 4 food per round depending on how many people are working it.",
+      "buildingType": "FishingCamp",
+      "allowedTerrains": ["Beach"],
+      "focusCost": 4,
+      "playCost": { "food": 0, "people": 2 },
+      "upkeep":   { "food": 0, "people": 0 },
+      "production": { "food": 4, "people": 0 },
+      "investCost": { "food": 2, "people": 0 }
+    },
+    {
+      "type": "building",
+      "id": "building_sheep_pasture",
+      "name": "Sheep Pasture",
+      "description": "Shepherds tend flocks on rocky hillsides. Produces up to 4 food per round depending on how many people are working it.",
+      "buildingType": "SheepPasture",
+      "allowedTerrains": ["Hill"],
+      "focusCost": 4,
+      "playCost": { "food": 0, "people": 2 },
+      "upkeep":   { "food": 0, "people": 0 },
+      "production": { "food": 4, "people": 0 },
+      "investCost": { "food": 2, "people": 0 }
     }
   ]
 }
