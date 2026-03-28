@@ -352,7 +352,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         sb.AppendLine($"Resources now: {game.Resources}");
 
         // Population summary
-        sb.AppendLine($"Population:    {game.Resources.People} total, {totalOccupied} occupied, {game.Resources.People - totalOccupied} available");
+        var endPopCap = GetPopulationCap(game);
+        sb.AppendLine($"Population:    {game.Resources.People}/{endPopCap}, {totalOccupied} occupied, {game.Resources.People - totalOccupied} available");
 
         // Burn cards from the land deck at end of each round
         int burnCount = Math.Min(ResourceAmount.DeckBurnPerRound, game.LandDeck.Count);
@@ -405,7 +406,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var occupied = GetOccupiedWorkers(game);
         var available = game.Resources.People - occupied;
         var popCap = GetPopulationCap(game);
-        sb.AppendLine($"Round {game.Round} | {game.PlayerName} | {game.Resources} | Deck: {game.LandDeck.Count} cards | Workers: {occupied}/{game.Resources.People} occupied, {available} available | Pop cap: {popCap}");
+        sb.AppendLine($"Round {game.Round} | {game.PlayerName} | {game.Resources} | Deck: {game.LandDeck.Count} cards | Population: {game.Resources.People}/{popCap} | Workers: {occupied} occupied, {available} available");
         sb.AppendLine();
         sb.Append("      ");
         for (int c = 0; c < Board.Cols; c++) sb.Append($"  [{c}]  ");

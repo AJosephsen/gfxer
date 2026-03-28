@@ -73,7 +73,7 @@ public static class GameManagementTools
         sb.AppendLine();
         sb.AppendLine($"Resources:  {game.Resources}");
         sb.AppendLine();
-        sb.AppendLine($"Population: {game.Resources.People} total (cap: {popCap})");
+        sb.AppendLine($"Population: {game.Resources.People}/{popCap}");
         sb.AppendLine($"  Occupied: {occupied}");
         sb.AppendLine($"  Available: {available}");
         sb.AppendLine();
