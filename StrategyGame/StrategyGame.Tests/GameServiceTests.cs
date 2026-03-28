@@ -1,5 +1,6 @@
 using StrategyGame.Core.Catalog;
 using StrategyGame.Core.Models;
+using StrategyGame.Core.Models.Board;
 using StrategyGame.Core.Models.Cards;
 using StrategyGame.Core.Services;
 using Xunit;
@@ -161,6 +162,7 @@ public sealed class GameServiceTests
         // Plant a card with known AccessibilityCost = 5 → cost = round(3 × 0.5) = 2
         var cheapLand = new LandCard { DefinitionId = "land_plains", Fertility = 10, AccessibilityCost = 5 };
         game.Hand.Add(cheapLand);
+        game.Board.GetCell(0, 4).IsLocked = false;
         repo.Save(game);
         var focusBefore = game.Resources.Focus;
         var (result, _) = svc.PlayCard(game.GameId, cheapLand.InstanceId, 0, 4);
@@ -320,6 +322,7 @@ public sealed class GameServiceTests
         var farm = new BuildingCard { DefinitionId = "building_farm" };
         game.Hand.Add(plains);
         game.Hand.Add(farm);
+        game.Board.GetCell(2, 2).IsLocked = false;
         repo.Save(game);
         var (afterLand, _) = svc.PlayCard(game.GameId, plains.InstanceId, 2, 2);
         var (result, _) = svc.PlayCard(game.GameId, farm.InstanceId, 2, 2);
@@ -338,6 +341,7 @@ public sealed class GameServiceTests
         var farm = new BuildingCard { DefinitionId = "building_farm" };
         game.Hand.Add(forest);
         game.Hand.Add(farm);
+        game.Board.GetCell(2, 2).IsLocked = false;
         repo.Save(game);
         var (afterLand, _) = svc.PlayCard(game.GameId, forest.InstanceId, 2, 2);
         Assert.Throws<InvalidOperationException>(() =>
@@ -354,6 +358,7 @@ public sealed class GameServiceTests
         var camp = new BuildingCard { DefinitionId = "building_lumber_camp" };
         game.Hand.Add(forest);
         game.Hand.Add(camp);
+        game.Board.GetCell(3, 3).IsLocked = false;
         repo.Save(game);
         var (afterLand, _) = svc.PlayCard(game.GameId, forest.InstanceId, 3, 3);
         var (result, _) = svc.PlayCard(game.GameId, camp.InstanceId, 3, 3);
@@ -371,6 +376,7 @@ public sealed class GameServiceTests
         var camp = new BuildingCard { DefinitionId = "building_lumber_camp" };
         game.Hand.Add(plains);
         game.Hand.Add(camp);
+        game.Board.GetCell(3, 3).IsLocked = false;
         repo.Save(game);
         var (afterLand, _) = svc.PlayCard(game.GameId, plains.InstanceId, 3, 3);
         Assert.Throws<InvalidOperationException>(() =>
@@ -388,6 +394,7 @@ public sealed class GameServiceTests
         var farm = new BuildingCard { DefinitionId = "building_farm" };
         game.Hand.Add(plains);
         game.Hand.Add(farm);
+        game.Board.GetCell(2, 2).IsLocked = false;
         repo.Save(game);
         var (afterLand, _) = svc.PlayCard(game.GameId, plains.InstanceId, 2, 2);
         Assert.Throws<InvalidOperationException>(() =>
@@ -405,6 +412,7 @@ public sealed class GameServiceTests
         var farm = new BuildingCard { DefinitionId = "building_farm" };
         game.Hand.Add(plains);
         game.Hand.Add(farm);
+        game.Board.GetCell(2, 2).IsLocked = false;
         repo.Save(game);
         var (afterLand, _) = svc.PlayCard(game.GameId, plains.InstanceId, 2, 2);
         var (result, _) = svc.PlayCard(game.GameId, farm.InstanceId, 2, 2);
@@ -630,5 +638,193 @@ public sealed class GameServiceTests
         Assert.NotNull(cell.Building);
         Assert.False(cell.Building!.IsActive);
         Assert.Contains("Disabled", summary);
+    }
+
+    // ── Hand limit ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void DrawFromDeck_ThrowsWhenHandFull()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        // Fill hand to max
+        while (game.Hand.Count < ResourceAmount.MaxHandSize)
+            game.Hand.Add(new LandCard { DefinitionId = "land_plains" });
+        repo.Save(game);
+        Assert.Throws<InvalidOperationException>(() => svc.DrawFromDeck(game.GameId));
+    }
+
+    [Fact]
+    public void Invest_ThrowsWhenHandFull()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        while (game.Hand.Count < ResourceAmount.MaxHandSize)
+            game.Hand.Add(new LandCard { DefinitionId = "land_plains" });
+        repo.Save(game);
+        Assert.Throws<InvalidOperationException>(() => svc.Invest(game.GameId, "land_plains"));
+    }
+
+    // ── Discard ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void DiscardCard_MovesCardToDiscardPile()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        var card = game.Hand[0];
+        var (updated, _) = svc.DiscardCard(game.GameId, card.InstanceId);
+        Assert.DoesNotContain(updated.Hand, c => c.InstanceId == card.InstanceId);
+        Assert.Contains(updated.DiscardPile, c => c.InstanceId == card.InstanceId);
+    }
+
+    [Fact]
+    public void DiscardCard_ReducesHandSize()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        var sizeBefore = game.Hand.Count;
+        svc.DiscardCard(game.GameId, game.Hand[0].InstanceId);
+        var updated = svc.LoadGame(game.GameId);
+        Assert.Equal(sizeBefore - 1, updated.Hand.Count);
+    }
+
+    [Fact]
+    public void DiscardCard_ThrowsWhenCardNotInHand()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        Assert.Throws<InvalidOperationException>(() =>
+            svc.DiscardCard(game.GameId, "nonexistent"));
+    }
+
+    [Fact]
+    public void DiscardCard_AllowsDrawAfterBeingFull()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        while (game.Hand.Count < ResourceAmount.MaxHandSize)
+            game.Hand.Add(new LandCard { DefinitionId = "land_plains" });
+        repo.Save(game);
+        // Discard to make room
+        svc.DiscardCard(game.GameId, game.Hand[0].InstanceId);
+        // Now draw should succeed
+        var (updated, _) = svc.DrawFromDeck(game.GameId);
+        Assert.Equal(ResourceAmount.MaxHandSize, updated.Hand.Count);
+    }
+
+    // ── Land deck ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public void StartGame_LandDeckHas500Cards()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        Assert.Equal(ResourceAmount.LandDeckSize, game.LandDeck.Count);
+    }
+
+    [Fact]
+    public void DrawFromDeck_RemovesFromDeckFront()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        var deckBefore = game.LandDeck.Count;
+        svc.DrawFromDeck(game.GameId);
+        var updated = svc.LoadGame(game.GameId);
+        Assert.Equal(deckBefore - 1, updated.LandDeck.Count);
+    }
+
+    [Fact]
+    public void DrawFromDeck_ThrowsWhenDeckEmpty()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        game.LandDeck.Clear();
+        repo.Save(game);
+        Assert.Throws<InvalidOperationException>(() => svc.DrawFromDeck(game.GameId));
+    }
+
+    [Fact]
+    public void EndRound_Burns15CardsFromDeck()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        var deckBefore = game.LandDeck.Count;
+        svc.EndRound(game.GameId);
+        var updated = svc.LoadGame(game.GameId);
+        Assert.Equal(deckBefore - ResourceAmount.DeckBurnPerRound, updated.LandDeck.Count);
+    }
+
+    [Fact]
+    public void EndRound_BurnsSummaryContainsDeckInfo()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        var (_, summary) = svc.EndRound(game.GameId);
+        Assert.Contains("Land deck:", summary);
+        Assert.Contains("burned", summary);
+    }
+
+    [Fact]
+    public void EndRound_BurnsOnlyRemainingCardsWhenDeckAlmostEmpty()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        game.LandDeck = game.LandDeck.Take(5).ToList(); // only 5 left
+        repo.Save(game);
+        var (updated, summary) = svc.EndRound(game.GameId);
+        Assert.Empty(updated.LandDeck);
+        Assert.Contains("exhausted", summary);
+    }
+
+    // ── Locked cells ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Board_StartsWith6UnlockedCells()
+    {
+        var board = new StrategyGame.Core.Models.Board.Board();
+        var unlocked = board.AllCells().Count(c => !c.IsLocked);
+        Assert.Equal(Board.StartRows * Board.StartCols, unlocked);
+    }
+
+    [Fact]
+    public void Board_HasCorrectLockedCellCount()
+    {
+        var board = new StrategyGame.Core.Models.Board.Board();
+        var locked = board.AllCells().Count(c => c.IsLocked);
+        Assert.Equal(Board.Rows * Board.Cols - Board.StartRows * Board.StartCols, locked);
+    }
+
+    [Fact]
+    public void PlayCard_ThrowsWhenCellIsLocked()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        var land = new LandCard { DefinitionId = "land_plains" };
+        game.Hand.Add(land);
+        // (0, 4) is outside the starting zone → locked
+        repo.Save(game);
+        Assert.Throws<InvalidOperationException>(() =>
+            svc.PlayCard(game.GameId, land.InstanceId, 0, 4));
+    }
+
+    [Fact]
+    public void PlayCard_Land_UnlocksAdjacentCells()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        // Place land at (1,2) — the rightmost column of the starting zone
+        var land = game.Hand.OfType<LandCard>().First();
+        svc.PlayCard(game.GameId, land.InstanceId, 1, 2);
+        var updated = svc.LoadGame(game.GameId);
+        // (1,3) should now be unlocked (right neighbor of (1,2))
+        Assert.False(updated.Board.GetCell(1, 3).IsLocked);
     }
 }

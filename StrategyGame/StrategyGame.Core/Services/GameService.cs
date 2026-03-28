@@ -23,11 +23,17 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             Resources = new ResourceAmount(Food: 8, People: 5, Focus: ResourceAmount.MaxFocus)
         };
 
-        // Starting hand: 3 random land cards + 1 Settlement
         var landIds = catalog.LandCards.Select(d => d.Id).ToArray();
+
+        // Starting hand: 3 random land cards + 1 Settlement
         for (int i = 0; i < 3; i++)
             game.Hand.Add(LandCard.Create(landIds[Random.Shared.Next(landIds.Length)]));
         game.Hand.Add(new BuildingCard { DefinitionId = "building_settlement" });
+
+        // Pre-shuffle 500-card land deck (15 cards burned per round → ~33 rounds max)
+        game.LandDeck = Enumerable.Range(0, ResourceAmount.LandDeckSize)
+            .Select(_ => landIds[Random.Shared.Next(landIds.Length)])
+            .ToList();
 
         repo.Save(game);
         return game;
@@ -57,6 +63,10 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var def = catalog.Get(card.DefinitionId);
         var cell = game.Board.GetCell(row, col);
 
+        if (cell.IsLocked)
+            throw new InvalidOperationException(
+                $"Cell ({row},{col}) is locked. Place a land card on an adjacent cell first to unlock it.");
+
         // Focus cost — land cards scale by their AccessibilityCost multiplier
         int focusAmount = card is LandCard lc0
             ? lc0.ComputeFocusCost(def.FocusCost)
@@ -76,6 +86,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
             game.Resources = game.Resources.Subtract(focusCost);
             cell.Land = landCard;
+            game.Board.UnlockAdjacent(row, col);
             game.Hand.RemoveAt(idx);
             message = $"Placed {def.Name} land at ({row},{col}). Spent: {focusAmount} Focus.";
         }
@@ -126,12 +137,20 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
     {
         var game = repo.Load(gameId);
 
+        if (game.Hand.Count >= ResourceAmount.MaxHandSize)
+            throw new InvalidOperationException(
+                $"Hand is full ({ResourceAmount.MaxHandSize}/{ResourceAmount.MaxHandSize}). Discard a card first using discard_card.");
+
         if (game.Resources.Focus < ResourceAmount.DrawCardFocusCost)
             throw new InvalidOperationException(
                 $"Not enough Focus to draw a card. Need: {ResourceAmount.DrawCardFocusCost} Focus, Have: {game.Resources.Focus} Focus.");
 
-        var landIds = catalog.LandCards.Select(d => d.Id).ToArray();
-        var drawnId = landIds[Random.Shared.Next(landIds.Length)];
+        if (game.LandDeck.Count == 0)
+            throw new InvalidOperationException(
+                "The land deck is exhausted. No more land cards can be drawn.");
+
+        var drawnId = game.LandDeck[0];
+        game.LandDeck.RemoveAt(0);
         var drawn = catalog.Get(drawnId);
 
         var newCard = LandCard.Create(drawnId);
@@ -154,6 +173,10 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var game = repo.Load(gameId);
         var def = catalog.Get(cardDefinitionId);
 
+        if (game.Hand.Count >= ResourceAmount.MaxHandSize)
+            throw new InvalidOperationException(
+                $"Hand is full ({ResourceAmount.MaxHandSize}/{ResourceAmount.MaxHandSize}). Discard a card first using discard_card.");
+
         if (!game.Resources.CanAfford(def.InvestCost))
             throw new InvalidOperationException(
                 $"Cannot afford {def.Name}. Need: {def.InvestCost}, Have: {game.Resources}.");
@@ -170,6 +193,28 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
         var message = $"Invested in {def.Name}. Paid: {def.InvestCost}. Card added to hand (ID: {newCard.InstanceId}).";
         return (game, message);
+    }
+
+    // ── Discard ─────────────────────────────────────────────────────────────
+
+    /// <summary>Move a card from hand to the discard pile.</summary>
+    public (GameState game, string message) DiscardCard(string gameId, string cardInstanceId)
+    {
+        var game = repo.Load(gameId);
+
+        var idx = game.Hand.FindIndex(c => c.InstanceId == cardInstanceId);
+        if (idx < 0)
+            throw new InvalidOperationException(
+                $"Card '{cardInstanceId}' not found in hand. Use get_hand to list available cards.");
+
+        var card = game.Hand[idx];
+        var def = catalog.Get(card.DefinitionId);
+        game.Hand.RemoveAt(idx);
+        game.DiscardPile.Add(card);
+
+        game.LastPlayedAt = DateTimeOffset.UtcNow;
+        repo.Save(game);
+        return (game, $"Discarded {def.Name} (id: {card.InstanceId}).");
     }
 
     // ── Round processing ────────────────────────────────────────────────────
@@ -231,6 +276,15 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             sb.AppendLine($"  (capped — would have gained {ResourceAmount.FocusPerRound}, had {focusBefore})");
 
         sb.AppendLine($"Resources now: {game.Resources}");
+
+        // Burn cards from the land deck at end of each round
+        int burnCount = Math.Min(ResourceAmount.DeckBurnPerRound, game.LandDeck.Count);
+        if (burnCount > 0)
+            game.LandDeck.RemoveRange(0, burnCount);
+        sb.AppendLine($"Land deck:     {game.LandDeck.Count} cards remain ({burnCount} burned).");
+        if (game.LandDeck.Count == 0)
+            sb.AppendLine($"⚠ The land deck is exhausted. No more land cards can be drawn.");
+
         game.Round++;
         sb.AppendLine($"Round {game.Round} begins.");
 
@@ -244,7 +298,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
     public string RenderBoard(GameState game)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"Round {game.Round} | {game.PlayerName} | {game.Resources}");
+        sb.AppendLine($"Round {game.Round} | {game.PlayerName} | {game.Resources} | Deck: {game.LandDeck.Count} cards");
         sb.AppendLine();
         sb.Append("      ");
         for (int c = 0; c < Board.Cols; c++) sb.Append($"  [{c}]  ");
@@ -263,17 +317,22 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
         sb.AppendLine();
         sb.AppendLine("Legend: FOR=Forest  PLN=Plains  HIL=Hill  BCH=Beach");
-        sb.AppendLine("        SET=Settlement  FRM=Farm  LMB=LumberCamp  FSH=FishingCamp  SHP=SheepPasture  !=disabled  ...=empty");
+        sb.AppendLine("        SET=Settlement  FRM=Farm  LMB=LumberCamp  FSH=FishingCamp  SHP=SheepPasture  !=disabled  ###=locked  ...=empty");
         return sb.ToString().TrimEnd();
     }
 
     public string RenderHand(GameState game)
     {
-        if (game.Hand.Count == 0)
-            return "Your hand is empty. Use invest to acquire cards.";
-
         var sb = new StringBuilder();
-        sb.AppendLine($"Hand ({game.Hand.Count} card{(game.Hand.Count != 1 ? "s" : "")}):");
+        if (game.Hand.Count == 0)
+        {
+            sb.AppendLine($"Hand (0/{ResourceAmount.MaxHandSize} cards) — empty. Use invest or draw_card to get cards.");
+            if (game.DiscardPile.Count > 0)
+                sb.Append($"Discard pile: {game.DiscardPile.Count} card{(game.DiscardPile.Count != 1 ? "s" : "")}.");
+            return sb.ToString().TrimEnd();
+        }
+
+        sb.AppendLine($"Hand ({game.Hand.Count}/{ResourceAmount.MaxHandSize}):");
         for (int i = 0; i < game.Hand.Count; i++)
         {
             var card = game.Hand[i];
@@ -303,6 +362,13 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
                 sb.AppendLine($"      Play cost:    {actualCost} Focus{costNote}");
             }
         }
+
+        if (game.DiscardPile.Count > 0)
+        {
+            sb.AppendLine();
+            sb.Append($"Discard pile: {game.DiscardPile.Count} card{(game.DiscardPile.Count != 1 ? "s" : "")}.");
+        }
+
         return sb.ToString().TrimEnd();
     }
 
@@ -339,6 +405,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
     private string RenderCell(BoardCell cell)
     {
+        if (cell.IsLocked) return " ### ";
         if (cell.Land == null) return " ... ";
 
         var landDef = (LandDefinition)catalog.Get(cell.Land.DefinitionId);
@@ -356,8 +423,11 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var bDef = (BuildingDefinition)catalog.Get(cell.Building.DefinitionId);
         var bAbbr = bDef.BuildingType switch
         {
-            BuildingType.Settlement => "SET",
-            BuildingType.Farm       => "FRM",
+            BuildingType.Settlement  => "SET",
+            BuildingType.Farm        => "FRM",
+            BuildingType.LumberCamp  => "LMB",
+            BuildingType.FishingCamp => "FSH",
+            BuildingType.SheepPasture => "SHP",
             _ => "???"
         };
         var flag = cell.Building.IsActive ? "" : "!";

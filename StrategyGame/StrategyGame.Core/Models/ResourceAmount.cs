@@ -18,6 +18,15 @@ public record ResourceAmount(int Food = 0, int People = 0, int Wood = 0, int Foc
     /// <summary>Focus cost to draw a random land card from the deck.</summary>
     public const int DrawCardFocusCost = 1;
 
+    /// <summary>Maximum number of cards a player can hold in hand at once.</summary>
+    public const int MaxHandSize = 7;
+
+    /// <summary>Number of land cards in the deck at the start of a game.</summary>
+    public const int LandDeckSize = 500;
+
+    /// <summary>Cards burned (removed) from the land deck at the end of each round. Max rounds ≈ 500 / 15 = 33.</summary>
+    public const int DeckBurnPerRound = 15;
+
     public ResourceAmount Add(ResourceAmount other) =>
         new(Food + other.Food, People + other.People, Wood + other.Wood, Focus + other.Focus);
 

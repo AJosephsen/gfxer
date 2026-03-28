@@ -81,7 +81,7 @@ public sealed class McpToolIntegrationTests
         var svc = CreateService();
         var game = svc.StartGame("Alice");
         var output = BoardTools.GetHand(svc, game.GameId);
-        Assert.Contains("Hand (4 cards)", output);
+        Assert.Contains("Hand (4/7)", output);
     }
 
     // ── draw_card ────────────────────────────────────────────────────────────
@@ -219,13 +219,13 @@ public sealed class McpToolIntegrationTests
         var game = svc.StartGame("Carol");
         var gameId = game.GameId;
 
-        // Place land and settlement
+        // Place land and settlement — use (1,1) which is in the starting unlocked zone
         var landCard = game.Hand.OfType<LandCard>().First();
-        svc.PlayCard(gameId, landCard.InstanceId, 2, 2);
+        svc.PlayCard(gameId, landCard.InstanceId, 1, 1);
         var state = svc.LoadGame(gameId);
         var settlement = state.Hand.OfType<BuildingCard>()
             .First(c => c.DefinitionId == "building_settlement");
-        svc.PlayCard(gameId, settlement.InstanceId, 2, 2);
+        svc.PlayCard(gameId, settlement.InstanceId, 1, 1);
 
         // End 3 rounds
         for (int i = 0; i < 3; i++)
