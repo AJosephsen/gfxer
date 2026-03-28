@@ -6,7 +6,7 @@ using StrategyGame.Core.Services;
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddSingleton<CardCatalog>();
-builder.Services.AddSingleton<GameRepository>();
+builder.Services.AddSingleton<IGameRepository, GameRepository>();
 builder.Services.AddSingleton<GameService>();
 
 builder.Services
