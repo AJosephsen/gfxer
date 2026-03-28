@@ -64,6 +64,7 @@ app.MapGet("/api/catalog", () =>
             description = b.Description,
             buildingType = b.BuildingType.ToString(),
             allowedTerrains = b.AllowedTerrains.Select(t => t.ToString()).ToArray(),
+            occupies = b.Occupies,
             production = new { food = b.Production.Food, people = b.Production.People, wood = b.Production.Wood },
             upkeep = new { food = b.Upkeep.Food, people = b.Upkeep.People, wood = b.Upkeep.Wood },
             playCost = new { food = b.PlayCost.Food, people = b.PlayCost.People, wood = b.PlayCost.Wood },
@@ -203,6 +204,7 @@ static class ViewerHtml
   }
   .cell .building-name.disabled { color: #ef4444; text-decoration: line-through; }
   .cell .fertility { font-size: 9px; opacity: 0.6; position: absolute; top: 3px; right: 5px; }
+  .cell .workers { font-size: 9px; opacity: 0.8; position: absolute; bottom: 3px; right: 5px; }
 
   .hand-section {
     max-width: 800px;
@@ -347,6 +349,23 @@ function render(game) {
   resBar.appendChild(resourceBox('deck', 'Deck', game.landDeck ? game.landDeck.length : '?', '🃏'));
   v.appendChild(resBar);
 
+  // Population / Workers bar
+  const popBar = el('div', 'resources');
+  let totalOccupied = 0;
+  if (game.board && game.board.cells) {
+    for (const cell of game.board.cells) {
+      if (cell.building && cell.building.isActive) {
+        totalOccupied += cell.building.assignedWorkers || 0;
+      }
+    }
+  }
+  const totalPeople = res.people;
+  const available = totalPeople - totalOccupied;
+  popBar.appendChild(resourceBox('people', 'Total Pop', totalPeople, '👥'));
+  popBar.appendChild(resourceBox('focus', 'Occupied', totalOccupied, '🔨'));
+  popBar.appendChild(resourceBox('wood', 'Available', available, '🏠'));
+  v.appendChild(popBar);
+
   // Board
   const boardWrap = el('div', 'board-container');
   const board = el('div', 'board');
@@ -380,6 +399,11 @@ function render(game) {
         const bName = bDef ? bDef.name : cell.building.definitionId;
         const cls = cell.building.isActive ? '' : ' disabled';
         html += `<span class="building-name${cls}">${bName}</span>`;
+        // Show worker assignment
+        if (bDef && bDef.occupies > 0) {
+          const assigned = cell.building.assignedWorkers || 0;
+          html += `<span class="workers">${assigned}/${bDef.occupies} 👷</span>`;
+        }
       }
       div.innerHTML = html;
     }
@@ -415,6 +439,7 @@ function render(game) {
         cardDiv.classList.add('building');
         let detail = '';
         if (def) {
+          if (def.occupies > 0) detail += `Workers: 0\u2013${def.occupies} \u00b7 `;
           if (def.production) {
             const parts = [];
             if (def.production.food) parts.push(`${def.production.food} Food`);
