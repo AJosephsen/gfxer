@@ -131,7 +131,7 @@ static class ViewerHtml
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Strategy Game Viewer</title>
+<title>Ironhold — Wars of the Realm</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
@@ -175,11 +175,21 @@ static class ViewerHtml
   .header h1 {
     font-family: 'Cinzel Decorative', serif;
     color: var(--gold-bright);
-    font-size: 28px;
-    letter-spacing: 3px;
-    text-shadow: 0 0 20px rgba(232,201,106,0.4), 0 2px 4px rgba(0,0,0,0.8);
+    font-size: 36px;
+    letter-spacing: 6px;
+    text-shadow: 0 0 30px rgba(232,201,106,0.5), 0 2px 6px rgba(0,0,0,0.9);
   }
-  .header .status { color: var(--gold-dim); font-size: 11px; margin-top: 4px; letter-spacing: 1px; }
+  .header-subtitle {
+    font-family: 'Cinzel', serif;
+    color: var(--gold-dim);
+    font-size: 12px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-top: 4px;
+    margin-bottom: 2px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  }
+  .header .status { color: var(--gold-dim); font-size: 10px; margin-top: 4px; letter-spacing: 1px; }
   .header .status.live { color: #6dbf7e; }
 
   .game-picker {
@@ -377,15 +387,16 @@ static class ViewerHtml
 </head>
 <body>
 <div class="header">
-  <h1>Strategy Game Viewer</h1>
+  <h1>Ironhold</h1>
+  <p class="header-subtitle">Wars of the Realm</p>
   <div class="status" id="status">Connecting...</div>
 </div>
 
 <div class="game-picker">
-  <select id="gamePicker"><option value="">Select a game...</option></select>
+  <select id="gamePicker"><option value="">Choose a chronicle...</option></select>
 </div>
 
-<div id="viewer" class="empty-state">Select a game to watch</div>
+<div id="viewer" class="empty-state">Choose a chronicle to watch</div>
 
 <script>
 const API = '';
