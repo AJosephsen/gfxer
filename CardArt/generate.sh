@@ -29,15 +29,23 @@ if [[ -z "$PROMPT" ]]; then
   exit 1
 fi
 
-# ── Generate timestamp tag ───────────────────────────────────────────────────
+# ── Generate output name: {promptname}-{datetime}-{version}.png ──────────────
+PROMPT_BASE="$(basename "$PROMPT_FILE" .txt)"
 TAG="$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$OUT_DIR"
+
+# Auto-increment version if multiple runs in the same second
+VER=1
+while [[ -f "$OUT_DIR/${PROMPT_BASE}-${TAG}-${VER}.png" ]]; do
+  ((VER++))
+done
+PREFIX="${PROMPT_BASE}-${TAG}-${VER}"
 
 echo "=== Generating image ==="
 echo "  Model:  $MODEL"
 echo "  Size:   $SIZE"
 echo "  Prompt: $PROMPT"
-echo "  Tag:    $TAG"
+echo "  Output: $PREFIX"
 echo ""
 
 # ── Call OpenAI API ──────────────────────────────────────────────────────────
@@ -62,8 +70,8 @@ if [[ "$HTTP_CODE" != "200" ]]; then
 fi
 
 # ── Save outputs ─────────────────────────────────────────────────────────────
-IMAGE_FILE="$OUT_DIR/${TAG}.png"
-PROMPT_COPY="$OUT_DIR/${TAG}.prompt.txt"
+IMAGE_FILE="$OUT_DIR/${PREFIX}.png"
+PROMPT_COPY="$OUT_DIR/${PREFIX}.prompt.txt"
 
 # Extract base64 image data and decode to PNG
 B64=$(echo "$BODY" | jq -r '.data[0].b64_json // empty')
