@@ -44,6 +44,9 @@ public sealed record BuildingDefinition : CardDefinition
     [JsonConverter(typeof(TerrainArrayConverter))]
     public TerrainType[] AllowedTerrains { get; init; } = [];
 
+    /// <summary>Number of workers (people) this building occupies while active.</summary>
+    public int Occupies { get; init; } = 0;
+
     /// <summary>Resources spent when playing this card from hand onto the board.</summary>
     public ResourceAmount PlayCost { get; init; } = ResourceAmount.Zero;
 

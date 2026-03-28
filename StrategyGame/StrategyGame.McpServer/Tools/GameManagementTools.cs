@@ -55,4 +55,30 @@ public static class GameManagementTools
         sb.AppendLine(gameService.RenderHand(game));
         return sb.ToString().TrimEnd();
     }
+
+    [McpServerTool(Name = "get_status")]
+    [Description("Get a summary of the game status: resources, population (total/occupied/available), and deck cards remaining.")]
+    public static string GetStatus(
+        GameService gameService,
+        [Description("The game ID.")]
+        string gameId)
+    {
+        var game = gameService.LoadGame(gameId);
+        var occupied = gameService.GetOccupiedWorkers(game);
+        var available = game.Resources.People - occupied;
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"=== Game Status: {game.PlayerName} — Round {game.Round} ===");
+        sb.AppendLine();
+        sb.AppendLine($"Resources:  {game.Resources}");
+        sb.AppendLine();
+        sb.AppendLine($"Population: {game.Resources.People} total");
+        sb.AppendLine($"  Occupied: {occupied}");
+        sb.AppendLine($"  Available: {available}");
+        sb.AppendLine();
+        sb.AppendLine($"Land deck:  {game.LandDeck.Count} cards remaining");
+        sb.AppendLine($"Hand:       {game.Hand.Count}/{Core.Models.ResourceAmount.MaxHandSize} cards");
+        sb.AppendLine($"Discard:    {game.DiscardPile.Count} cards");
+        return sb.ToString().TrimEnd();
+    }
 }

@@ -113,6 +113,15 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
                     $"{bDef.Name} cannot be built on {landDef.Terrain}. " +
                     $"Allowed terrain: {(bDef.AllowedTerrains.Length > 0 ? string.Join(", ", bDef.AllowedTerrains) : "any")}.");
 
+            // Check worker availability (people are occupied, not consumed)
+            if (bDef.Occupies > 0)
+            {
+                var available = GetAvailableWorkers(game);
+                if (available < bDef.Occupies)
+                    throw new InvalidOperationException(
+                        $"Not enough available workers for {bDef.Name}. Need: {bDef.Occupies}, Available: {available} (total {game.Resources.People}, occupied {GetOccupiedWorkers(game)}).");
+            }
+
             var totalCost = bDef.PlayCost.Add(focusCost);
             if (!game.Resources.CanAfford(totalCost))
                 throw new InvalidOperationException(
@@ -121,7 +130,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             game.Resources = game.Resources.Subtract(totalCost);
             cell.Building = building;
             game.Hand.RemoveAt(idx);
-            message = $"Built {bDef.Name} at ({row},{col}) on {landDef.Terrain}. Spent: {totalCost}.";
+            var occupied = GetOccupiedWorkers(game);
+            message = $"Built {bDef.Name} at ({row},{col}) on {landDef.Terrain}. Spent: {totalCost}. Workers: {occupied}/{game.Resources.People} occupied.";
         }
         else
         {
@@ -283,6 +293,11 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
         sb.AppendLine($"Resources now: {game.Resources}");
 
+        // Population summary
+        var occupied = GetOccupiedWorkers(game);
+        var available = game.Resources.People - occupied;
+        sb.AppendLine($"Population:    {game.Resources.People} total, {occupied} occupied, {available} available");
+
         // Burn cards from the land deck at end of each round
         int burnCount = Math.Min(ResourceAmount.DeckBurnPerRound, game.LandDeck.Count);
         if (burnCount > 0)
@@ -299,12 +314,32 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         return (game, sb.ToString().TrimEnd());
     }
 
+    // ── Population ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Compute total occupied workers from all active buildings on the board.
+    /// </summary>
+    public int GetOccupiedWorkers(GameState game)
+    {
+        return game.Board.AllCells()
+            .Where(c => c.Building is { IsActive: true })
+            .Sum(c => ((BuildingDefinition)catalog.Get(c.Building!.DefinitionId)).Occupies);
+    }
+
+    /// <summary>
+    /// Available workers = total people − occupied workers.
+    /// </summary>
+    public int GetAvailableWorkers(GameState game) =>
+        game.Resources.People - GetOccupiedWorkers(game);
+
     // ── Rendering ───────────────────────────────────────────────────────────
 
     public string RenderBoard(GameState game)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"Round {game.Round} | {game.PlayerName} | {game.Resources} | Deck: {game.LandDeck.Count} cards");
+        var occupied = GetOccupiedWorkers(game);
+        var available = game.Resources.People - occupied;
+        sb.AppendLine($"Round {game.Round} | {game.PlayerName} | {game.Resources} | Deck: {game.LandDeck.Count} cards | Workers: {occupied}/{game.Resources.People} occupied, {available} available");
         sb.AppendLine();
         sb.Append("      ");
         for (int c = 0; c < Board.Cols; c++) sb.Append($"  [{c}]  ");
@@ -351,6 +386,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             {
                 var playCostStr = bDef.PlayCost.IsEmpty ? "" : $" + {bDef.PlayCost}";
                 sb.AppendLine($"      Play cost: {def.FocusCost} Focus{playCostStr}");
+                if (bDef.Occupies > 0) sb.AppendLine($"      Occupies:  {bDef.Occupies} worker{(bDef.Occupies != 1 ? "s" : "")}");
                 if (!bDef.Production.IsEmpty) sb.AppendLine($"      Produces:  {bDef.Production}/round");
                 if (!bDef.Upkeep.IsEmpty)     sb.AppendLine($"      Upkeep:    {bDef.Upkeep}/round");
                 var terrain = bDef.AllowedTerrains.Length > 0
@@ -396,6 +432,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             {
                 var playCostStr = bDef.PlayCost.IsEmpty ? "" : $" + {bDef.PlayCost}";
                 sb.AppendLine($"    Place cost: {def.FocusCost} Focus{playCostStr}");
+                if (bDef.Occupies > 0) sb.AppendLine($"    Occupies:   {bDef.Occupies} worker{(bDef.Occupies != 1 ? "s" : "")}");
                 if (!bDef.Production.IsEmpty) sb.AppendLine($"    Produces:   {bDef.Production}/round");
                 if (!bDef.Upkeep.IsEmpty)     sb.AppendLine($"    Upkeep:     {bDef.Upkeep}/round");
             }

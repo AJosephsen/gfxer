@@ -247,9 +247,10 @@ public sealed class GameServiceTests
         var landCard = game.Hand.OfType<LandCard>().First();
         var catalog = new CardCatalog();
         var def = catalog.Get(landCard.DefinitionId);
+        var expectedCost = landCard.ComputeFocusCost(def.FocusCost);
         var focusBefore = game.Resources.Focus;
         var (updated, _) = svc.PlayCard(game.GameId, landCard.InstanceId, 0, 0);
-        Assert.Equal(focusBefore - def.FocusCost, updated.Resources.Focus);
+        Assert.Equal(focusBefore - expectedCost, updated.Resources.Focus);
     }
 
     [Fact]
@@ -879,5 +880,111 @@ public sealed class GameServiceTests
             Assert.DoesNotContain(game.Hand.OfType<LandCard>(),
                 c => c.DefinitionId == "land_wasteland");
         }
+    }
+
+    // ── Occupation / Population ─────────────────────────────────────────────
+
+    [Fact]
+    public void PlayCard_Building_DoesNotConsumePeople()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        var peopleBefore = game.Resources.People;
+        // Place land then lumber camp (occupies 2 workers)
+        var forest = new LandCard { DefinitionId = "land_forest" };
+        var camp = new BuildingCard { DefinitionId = "building_lumber_camp" };
+        game.Hand.Add(forest);
+        game.Hand.Add(camp);
+        game.Board.GetCell(0, 0).IsLocked = false;
+        repo.Save(game);
+        svc.PlayCard(game.GameId, forest.InstanceId, 0, 0);
+        var (result, _) = svc.PlayCard(game.GameId, camp.InstanceId, 0, 0);
+        // People count should NOT decrease — workers are occupied, not consumed
+        Assert.Equal(peopleBefore, result.Resources.People);
+    }
+
+    [Fact]
+    public void GetOccupiedWorkers_ReturnsCorrectCount()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        Assert.Equal(0, svc.GetOccupiedWorkers(game));
+        // Place a lumber camp (occupies 2)
+        var forest = new LandCard { DefinitionId = "land_forest" };
+        var camp = new BuildingCard { DefinitionId = "building_lumber_camp" };
+        game.Hand.Add(forest);
+        game.Hand.Add(camp);
+        game.Board.GetCell(0, 0).IsLocked = false;
+        repo.Save(game);
+        svc.PlayCard(game.GameId, forest.InstanceId, 0, 0);
+        var (result, _) = svc.PlayCard(game.GameId, camp.InstanceId, 0, 0);
+        Assert.Equal(2, svc.GetOccupiedWorkers(result));
+    }
+
+    [Fact]
+    public void GetAvailableWorkers_ReturnsCorrectCount()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        // Start with 5 people, 0 occupied
+        Assert.Equal(5, svc.GetAvailableWorkers(game));
+        // Place a lumber camp (occupies 2)
+        var forest = new LandCard { DefinitionId = "land_forest" };
+        var camp = new BuildingCard { DefinitionId = "building_lumber_camp" };
+        game.Hand.Add(forest);
+        game.Hand.Add(camp);
+        game.Board.GetCell(0, 0).IsLocked = false;
+        repo.Save(game);
+        svc.PlayCard(game.GameId, forest.InstanceId, 0, 0);
+        var (result, _) = svc.PlayCard(game.GameId, camp.InstanceId, 0, 0);
+        Assert.Equal(3, svc.GetAvailableWorkers(result)); // 5 - 2 = 3
+    }
+
+    [Fact]
+    public void PlayCard_Building_FailsWhenNotEnoughAvailableWorkers()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        // Set people to 1 — not enough for Farm (occupies 3)
+        game.Resources = game.Resources with { People = 1, Wood = 10 };
+        var plains = new LandCard { DefinitionId = "land_plains" };
+        var farm = new BuildingCard { DefinitionId = "building_farm" };
+        game.Hand.Add(plains);
+        game.Hand.Add(farm);
+        game.Board.GetCell(0, 0).IsLocked = false;
+        repo.Save(game);
+        svc.PlayCard(game.GameId, plains.InstanceId, 0, 0);
+        Assert.Throws<InvalidOperationException>(() =>
+            svc.PlayCard(game.GameId, farm.InstanceId, 0, 0));
+    }
+
+    [Fact]
+    public void PlayCard_Settlement_SucceedsWithZeroOccupies()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        // Settlement occupies 0 workers — should always succeed
+        game.Resources = game.Resources with { People = 0 };
+        var land = game.Hand.OfType<LandCard>().First();
+        var settlement = game.Hand.OfType<BuildingCard>().First(c => c.DefinitionId == "building_settlement");
+        repo.Save(game);
+        svc.PlayCard(game.GameId, land.InstanceId, 0, 0);
+        var (result, _) = svc.PlayCard(game.GameId, settlement.InstanceId, 0, 0);
+        Assert.NotNull(result.Board.GetCell(0, 0).Building);
+    }
+
+    [Fact]
+    public void EndRound_SummaryContainsPopulationInfo()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        var (_, summary) = svc.EndRound(game.GameId);
+        Assert.Contains("Population:", summary);
+        Assert.Contains("available", summary);
     }
 }
