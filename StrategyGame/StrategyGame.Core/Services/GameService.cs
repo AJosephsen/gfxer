@@ -113,15 +113,6 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
                     $"{bDef.Name} cannot be built on {landDef.Terrain}. " +
                     $"Allowed terrain: {(bDef.AllowedTerrains.Length > 0 ? string.Join(", ", bDef.AllowedTerrains) : "any")}.");
 
-            // Check worker availability (people are occupied, not consumed)
-            if (bDef.Occupies > 0)
-            {
-                var available = GetAvailableWorkers(game);
-                if (available < bDef.Occupies)
-                    throw new InvalidOperationException(
-                        $"Not enough available workers for {bDef.Name}. Need: {bDef.Occupies}, Available: {available} (total {game.Resources.People}, occupied {GetOccupiedWorkers(game)}).");
-            }
-
             var totalCost = bDef.PlayCost.Add(focusCost);
             if (!game.Resources.CanAfford(totalCost))
                 throw new InvalidOperationException(
@@ -130,8 +121,9 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             game.Resources = game.Resources.Subtract(totalCost);
             cell.Building = building;
             game.Hand.RemoveAt(idx);
-            var occupied = GetOccupiedWorkers(game);
-            message = $"Built {bDef.Name} at ({row},{col}) on {landDef.Terrain}. Spent: {totalCost}. Workers: {occupied}/{game.Resources.People} occupied.";
+            message = $"Built {bDef.Name} at ({row},{col}) on {landDef.Terrain}. Spent: {totalCost}.";
+            if (bDef.Occupies > 0)
+                message += $" Needs {bDef.Occupies} worker{(bDef.Occupies != 1 ? "s" : "")} (assigned at end of round).";
         }
         else
         {
@@ -241,15 +233,69 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var sb = new StringBuilder();
         sb.AppendLine($"=== End of Round {game.Round} ===");
 
-        // Collect all active buildings
+        // Collect all active buildings with their cells (row-major order)
         var activeBuildings = game.Board.AllCells()
             .Where(c => c.Building is { IsActive: true })
-            .Select(c => ((BuildingDefinition)catalog.Get(c.Building!.DefinitionId), c.Building!))
+            .Select(c => ((BuildingDefinition)catalog.Get(c.Building!.DefinitionId), c.Building!, c))
             .ToList();
 
-        // Production phase: all buildings produce simultaneously
-        var totalProduction = activeBuildings
-            .Aggregate(ResourceAmount.Zero, (acc, pair) => acc.Add(pair.Item1.Production));
+        // ── Worker distribution (round-robin) ───────────────────────────
+        // Reset all assignments
+        foreach (var (_, building, _) in activeBuildings)
+            building.AssignedWorkers = 0;
+
+        // Distribute workers one at a time, cycling through buildings that need them
+        var needsWorkers = activeBuildings
+            .Where(x => x.Item1.Occupies > 0)
+            .ToList();
+
+        int remaining = game.Resources.People;
+        while (remaining > 0 && needsWorkers.Count > 0)
+        {
+            var toRemove = new List<int>();
+            for (int i = 0; i < needsWorkers.Count && remaining > 0; i++)
+            {
+                var (bDef, building, _) = needsWorkers[i];
+                building.AssignedWorkers++;
+                remaining--;
+                if (building.AssignedWorkers >= bDef.Occupies)
+                    toRemove.Add(i);
+            }
+            // Remove filled buildings in reverse order
+            for (int i = toRemove.Count - 1; i >= 0; i--)
+                needsWorkers.RemoveAt(toRemove[i]);
+        }
+
+        // Report worker assignments
+        var totalOccupied = activeBuildings.Sum(x => x.Item2.AssignedWorkers);
+        sb.AppendLine($"Workers:       {totalOccupied}/{game.Resources.People} assigned");
+        foreach (var (bDef, building, cell) in activeBuildings)
+        {
+            if (bDef.Occupies > 0)
+                sb.AppendLine($"  ({cell.Row},{cell.Col}) {bDef.Name}: {building.AssignedWorkers}/{bDef.Occupies} workers");
+        }
+
+        // ── Production phase (scaled by worker assignment) ──────────────
+        var totalProduction = ResourceAmount.Zero;
+        foreach (var (bDef, building, _) in activeBuildings)
+        {
+            ResourceAmount output;
+            if (bDef.Occupies > 0)
+            {
+                // Scale production linearly: base × (assigned / capacity)
+                double ratio = (double)building.AssignedWorkers / bDef.Occupies;
+                output = new ResourceAmount(
+                    Food: (int)Math.Round(bDef.Production.Food * ratio),
+                    People: (int)Math.Round(bDef.Production.People * ratio),
+                    Wood: (int)Math.Round(bDef.Production.Wood * ratio));
+            }
+            else
+            {
+                // Buildings with 0 Occupies always produce at full capacity
+                output = bDef.Production;
+            }
+            totalProduction = totalProduction.Add(output);
+        }
 
         if (!totalProduction.IsEmpty)
         {
@@ -257,11 +303,11 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             sb.AppendLine($"Production:    +{totalProduction}");
         }
 
-        // Upkeep phase: pay per building; disable if can't afford
+        // ── Upkeep phase ────────────────────────────────────────────────
         var paidUpkeep = ResourceAmount.Zero;
         var disabledNames = new List<string>();
 
-        foreach (var (bDef, building) in activeBuildings)
+        foreach (var (bDef, building, _) in activeBuildings)
         {
             if (bDef.Upkeep.IsEmpty) continue;
 
@@ -294,9 +340,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         sb.AppendLine($"Resources now: {game.Resources}");
 
         // Population summary
-        var occupied = GetOccupiedWorkers(game);
-        var available = game.Resources.People - occupied;
-        sb.AppendLine($"Population:    {game.Resources.People} total, {occupied} occupied, {available} available");
+        sb.AppendLine($"Population:    {game.Resources.People} total, {totalOccupied} occupied, {game.Resources.People - totalOccupied} available");
 
         // Burn cards from the land deck at end of each round
         int burnCount = Math.Min(ResourceAmount.DeckBurnPerRound, game.LandDeck.Count);
@@ -317,13 +361,13 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
     // ── Population ────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Compute total occupied workers from all active buildings on the board.
+    /// Compute total occupied workers from all active buildings on the board (actual assignments).
     /// </summary>
     public int GetOccupiedWorkers(GameState game)
     {
         return game.Board.AllCells()
             .Where(c => c.Building is { IsActive: true })
-            .Sum(c => ((BuildingDefinition)catalog.Get(c.Building!.DefinitionId)).Occupies);
+            .Sum(c => c.Building!.AssignedWorkers);
     }
 
     /// <summary>
@@ -386,8 +430,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             {
                 var playCostStr = bDef.PlayCost.IsEmpty ? "" : $" + {bDef.PlayCost}";
                 sb.AppendLine($"      Play cost: {def.FocusCost} Focus{playCostStr}");
-                if (bDef.Occupies > 0) sb.AppendLine($"      Occupies:  {bDef.Occupies} worker{(bDef.Occupies != 1 ? "s" : "")}");
-                if (!bDef.Production.IsEmpty) sb.AppendLine($"      Produces:  {bDef.Production}/round");
+                if (bDef.Occupies > 0) sb.AppendLine($"      Workers:   0–{bDef.Occupies} (assigned round-robin at end of round, scales production)");
+                if (!bDef.Production.IsEmpty) sb.AppendLine($"      Max prod:  {bDef.Production}/round (at full workers)");
                 if (!bDef.Upkeep.IsEmpty)     sb.AppendLine($"      Upkeep:    {bDef.Upkeep}/round");
                 var terrain = bDef.AllowedTerrains.Length > 0
                     ? string.Join(", ", bDef.AllowedTerrains)
@@ -432,8 +476,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             {
                 var playCostStr = bDef.PlayCost.IsEmpty ? "" : $" + {bDef.PlayCost}";
                 sb.AppendLine($"    Place cost: {def.FocusCost} Focus{playCostStr}");
-                if (bDef.Occupies > 0) sb.AppendLine($"    Occupies:   {bDef.Occupies} worker{(bDef.Occupies != 1 ? "s" : "")}");
-                if (!bDef.Production.IsEmpty) sb.AppendLine($"    Produces:   {bDef.Production}/round");
+                if (bDef.Occupies > 0) sb.AppendLine($"    Workers:    0–{bDef.Occupies} (round-robin, scales production)");
+                if (!bDef.Production.IsEmpty) sb.AppendLine($"    Max prod:   {bDef.Production}/round (at full workers)");
                 if (!bDef.Upkeep.IsEmpty)     sb.AppendLine($"    Upkeep:     {bDef.Upkeep}/round");
             }
             else
@@ -475,7 +519,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             _ => "???"
         };
         var flag = cell.Building.IsActive ? "" : "!";
-        return $"{abbr}/{bAbbr}{flag}";
+        var workers = bDef.Occupies > 0 ? $"{cell.Building.AssignedWorkers}/{bDef.Occupies}" : "";
+        return $"{bAbbr}{flag}{workers}";
     }
 
     private static void ValidateBoardPosition(int row, int col)

@@ -905,13 +905,13 @@ public sealed class GameServiceTests
     }
 
     [Fact]
-    public void GetOccupiedWorkers_ReturnsCorrectCount()
+    public void GetOccupiedWorkers_ZeroBeforeEndRound()
     {
         var repo = new InMemoryGameRepository();
         var svc = new GameService(repo, new CardCatalog());
         var game = svc.StartGame("Alice");
         Assert.Equal(0, svc.GetOccupiedWorkers(game));
-        // Place a lumber camp (occupies 2)
+        // Place a lumber camp — workers not yet assigned (happens at EndRound)
         var forest = new LandCard { DefinitionId = "land_forest" };
         var camp = new BuildingCard { DefinitionId = "building_lumber_camp" };
         game.Hand.Add(forest);
@@ -920,18 +920,48 @@ public sealed class GameServiceTests
         repo.Save(game);
         svc.PlayCard(game.GameId, forest.InstanceId, 0, 0);
         var (result, _) = svc.PlayCard(game.GameId, camp.InstanceId, 0, 0);
-        Assert.Equal(2, svc.GetOccupiedWorkers(result));
+        Assert.Equal(0, svc.GetOccupiedWorkers(result)); // Not assigned until EndRound
     }
 
     [Fact]
-    public void GetAvailableWorkers_ReturnsCorrectCount()
+    public void EndRound_AssignsWorkersRoundRobin()
     {
         var repo = new InMemoryGameRepository();
         var svc = new GameService(repo, new CardCatalog());
         var game = svc.StartGame("Alice");
-        // Start with 5 people, 0 occupied
+        // Place two lumber camps (each needs 2 workers), start with 5 people
+        var forest1 = new LandCard { DefinitionId = "land_forest" };
+        var forest2 = new LandCard { DefinitionId = "land_forest" };
+        var camp1 = new BuildingCard { DefinitionId = "building_lumber_camp" };
+        var camp2 = new BuildingCard { DefinitionId = "building_lumber_camp" };
+        game.Hand.Add(forest1);
+        game.Hand.Add(camp1);
+        game.Hand.Add(forest2);
+        game.Hand.Add(camp2);
+        game.Board.GetCell(0, 1).IsLocked = false;
+        repo.Save(game);
+        svc.PlayCard(game.GameId, forest1.InstanceId, 0, 0);
+        svc.PlayCard(game.GameId, camp1.InstanceId, 0, 0);
+        svc.PlayCard(game.GameId, forest2.InstanceId, 0, 1);
+        svc.PlayCard(game.GameId, camp2.InstanceId, 0, 1);
+        // 5 people, 2 camps each needing 2 → camp1 gets 2, camp2 gets 2, 1 leftover
+        var (result, _) = svc.EndRound(game.GameId);
+        var b1 = result.Board.GetCell(0, 0).Building!;
+        var b2 = result.Board.GetCell(0, 1).Building!;
+        Assert.Equal(2, b1.AssignedWorkers);
+        Assert.Equal(2, b2.AssignedWorkers);
+        // +2 people from settlement production not present, so total occupied = 4, available = people-4
+        Assert.Equal(4, svc.GetOccupiedWorkers(result));
+    }
+
+    [Fact]
+    public void GetAvailableWorkers_ReturnsCorrectAfterEndRound()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
         Assert.Equal(5, svc.GetAvailableWorkers(game));
-        // Place a lumber camp (occupies 2)
+        // Place a lumber camp (needs 2 workers)
         var forest = new LandCard { DefinitionId = "land_forest" };
         var camp = new BuildingCard { DefinitionId = "building_lumber_camp" };
         game.Hand.Add(forest);
@@ -939,18 +969,20 @@ public sealed class GameServiceTests
         game.Board.GetCell(0, 0).IsLocked = false;
         repo.Save(game);
         svc.PlayCard(game.GameId, forest.InstanceId, 0, 0);
-        var (result, _) = svc.PlayCard(game.GameId, camp.InstanceId, 0, 0);
-        Assert.Equal(3, svc.GetAvailableWorkers(result)); // 5 - 2 = 3
+        svc.PlayCard(game.GameId, camp.InstanceId, 0, 0);
+        var (result, _) = svc.EndRound(game.GameId);
+        Assert.Equal(2, svc.GetOccupiedWorkers(result));
+        Assert.Equal(result.Resources.People - 2, svc.GetAvailableWorkers(result));
     }
 
     [Fact]
-    public void PlayCard_Building_FailsWhenNotEnoughAvailableWorkers()
+    public void PlayCard_Building_SucceedsEvenWithNoWorkers()
     {
+        // Buildings can always be placed — workers are distributed at EndRound
         var repo = new InMemoryGameRepository();
         var svc = new GameService(repo, new CardCatalog());
         var game = svc.StartGame("Alice");
-        // Set people to 1 — not enough for Farm (occupies 3)
-        game.Resources = game.Resources with { People = 1, Wood = 10 };
+        game.Resources = game.Resources with { People = 0, Wood = 10 };
         var plains = new LandCard { DefinitionId = "land_plains" };
         var farm = new BuildingCard { DefinitionId = "building_farm" };
         game.Hand.Add(plains);
@@ -958,8 +990,31 @@ public sealed class GameServiceTests
         game.Board.GetCell(0, 0).IsLocked = false;
         repo.Save(game);
         svc.PlayCard(game.GameId, plains.InstanceId, 0, 0);
-        Assert.Throws<InvalidOperationException>(() =>
-            svc.PlayCard(game.GameId, farm.InstanceId, 0, 0));
+        var (result, _) = svc.PlayCard(game.GameId, farm.InstanceId, 0, 0);
+        Assert.NotNull(result.Board.GetCell(0, 0).Building);
+    }
+
+    [Fact]
+    public void EndRound_ScalesProductionByWorkerAssignment()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        // Place a farm (occupies 3, produces 6 food at full)
+        game.Resources = game.Resources with { People = 2, Wood = 10 };
+        var plains = new LandCard { DefinitionId = "land_plains" };
+        var farm = new BuildingCard { DefinitionId = "building_farm" };
+        game.Hand.Add(plains);
+        game.Hand.Add(farm);
+        game.Board.GetCell(0, 0).IsLocked = false;
+        repo.Save(game);
+        svc.PlayCard(game.GameId, plains.InstanceId, 0, 0);
+        svc.PlayCard(game.GameId, farm.InstanceId, 0, 0);
+        var foodBefore = svc.LoadGame(game.GameId).Resources.Food;
+        var (result, summary) = svc.EndRound(game.GameId);
+        // 2 people / 3 capacity = 2/3 ratio → 6 * 2/3 = 4 food
+        Assert.Equal(2, result.Board.GetCell(0, 0).Building!.AssignedWorkers);
+        Assert.Equal(foodBefore + 4, result.Resources.Food);
     }
 
     [Fact]

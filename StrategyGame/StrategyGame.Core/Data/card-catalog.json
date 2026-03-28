@@ -69,7 +69,7 @@
       "occupies": 3,
       "focusCost": 4,
       "playCost": { "food": 0, "wood": 10 },
-      "upkeep":   { "food": 0, "people": 1 },
+      "upkeep":   { "food": 0 },
       "production": { "food": 6, "people": 0 },
       "investCost": { "food": 0, "people": 3 }
     },
