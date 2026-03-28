@@ -26,7 +26,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         // Starting hand: 3 random land cards + 1 Settlement
         var landIds = catalog.LandCards.Select(d => d.Id).ToArray();
         for (int i = 0; i < 3; i++)
-            game.Hand.Add(new LandCard { DefinitionId = landIds[Random.Shared.Next(landIds.Length)] });
+            game.Hand.Add(LandCard.Create(landIds[Random.Shared.Next(landIds.Length)]));
         game.Hand.Add(new BuildingCard { DefinitionId = "building_settlement" });
 
         repo.Save(game);
@@ -57,11 +57,14 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var def = catalog.Get(card.DefinitionId);
         var cell = game.Board.GetCell(row, col);
 
-        // All cards cost Focus to play
-        var focusCost = new ResourceAmount(Focus: def.FocusCost);
+        // Focus cost — land cards scale by their AccessibilityCost multiplier
+        int focusAmount = card is LandCard lc0
+            ? lc0.ComputeFocusCost(def.FocusCost)
+            : def.FocusCost;
+        var focusCost = new ResourceAmount(Focus: focusAmount);
         if (!game.Resources.CanAfford(focusCost))
             throw new InvalidOperationException(
-                $"Not enough Focus to play {def.Name}. Need: {def.FocusCost} Focus, Have: {game.Resources.Focus} Focus.");
+                $"Not enough Focus to play {def.Name}. Need: {focusAmount} Focus, Have: {game.Resources.Focus} Focus.");
 
         string message;
 
@@ -74,7 +77,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             game.Resources = game.Resources.Subtract(focusCost);
             cell.Land = landCard;
             game.Hand.RemoveAt(idx);
-            message = $"Placed {def.Name} land at ({row},{col}). Spent: {def.FocusCost} Focus.";
+            message = $"Placed {def.Name} land at ({row},{col}). Spent: {focusAmount} Focus.";
         }
         else if (card is BuildingCard building)
         {
@@ -131,14 +134,16 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var drawnId = landIds[Random.Shared.Next(landIds.Length)];
         var drawn = catalog.Get(drawnId);
 
-        var newCard = new LandCard { DefinitionId = drawnId };
+        var newCard = LandCard.Create(drawnId);
         game.Hand.Add(newCard);
         game.Resources = game.Resources.Subtract(new ResourceAmount(Focus: ResourceAmount.DrawCardFocusCost));
 
         game.LastPlayedAt = DateTimeOffset.UtcNow;
         repo.Save(game);
 
-        var message = $"Drew {drawn.Name} from the map deck (id: {newCard.InstanceId}). Spent: {ResourceAmount.DrawCardFocusCost} Focus.";
+        var message = $"Drew {drawn.Name} from the map deck (id: {newCard.InstanceId}). " +
+                      $"Fertility ×{newCard.Fertility / 10.0:0.0}, Play cost ×{newCard.AccessibilityCost / 10.0:0.0}. " +
+                      $"Spent: {ResourceAmount.DrawCardFocusCost} Focus.";
         return (game, message);
     }
 
@@ -290,8 +295,12 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             }
             else if (def is LandDefinition lDef)
             {
+                var lCard = (LandCard)card;
+                var actualCost = lCard.ComputeFocusCost(def.FocusCost);
+                var costNote = actualCost != def.FocusCost ? $" (×{lCard.AccessibilityCost / 10.0:0.0} of base {def.FocusCost})" : "";
                 sb.AppendLine($"      Terrain type: {lDef.Terrain}");
-                sb.AppendLine($"      Play cost: {def.FocusCost} Focus");
+                sb.AppendLine($"      Fertility:    ×{lCard.Fertility / 10.0:0.0}  (production bonus when built upon)");
+                sb.AppendLine($"      Play cost:    {actualCost} Focus{costNote}");
             }
         }
         return sb.ToString().TrimEnd();

@@ -95,6 +95,78 @@ public sealed class GameServiceTests
         Assert.Contains(list, s => s.GameId == game.GameId && s.PlayerName == "Alice");
     }
 
+    // ── LandCard stats ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void LandCard_Create_FertilityInRange()
+    {
+        for (int i = 0; i < 200; i++)
+        {
+            var card = LandCard.Create("land_plains");
+            Assert.InRange(card.Fertility, 5, 15);
+        }
+    }
+
+    [Fact]
+    public void LandCard_Create_AccessibilityCostInRange()
+    {
+        for (int i = 0; i < 200; i++)
+        {
+            var card = LandCard.Create("land_plains");
+            Assert.InRange(card.AccessibilityCost, 5, 12);
+        }
+    }
+
+    [Fact]
+    public void LandCard_ComputeFocusCost_ScalesWithAccessibility()
+    {
+        var cheap  = new LandCard { DefinitionId = "land_plains", Fertility = 10, AccessibilityCost = 5  };
+        var normal = new LandCard { DefinitionId = "land_plains", Fertility = 10, AccessibilityCost = 10 };
+        var pricey = new LandCard { DefinitionId = "land_plains", Fertility = 10, AccessibilityCost = 12 };
+        Assert.Equal(2, cheap.ComputeFocusCost(3));   // round(3 × 0.5) = 2
+        Assert.Equal(3, normal.ComputeFocusCost(3));  // round(3 × 1.0) = 3
+        Assert.Equal(4, pricey.ComputeFocusCost(3));  // round(3 × 1.2) = 4
+    }
+
+    [Fact]
+    public void StartGame_LandCardsHaveRolledStats()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        foreach (var card in game.Hand.OfType<LandCard>())
+        {
+            Assert.InRange(card.Fertility, 5, 15);
+            Assert.InRange(card.AccessibilityCost, 5, 12);
+        }
+    }
+
+    [Fact]
+    public void DrawFromDeck_LandCardHasRolledStats()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        var (updated, _) = svc.DrawFromDeck(game.GameId);
+        var drawn = updated.Hand.Last() as LandCard;
+        Assert.NotNull(drawn);
+        Assert.InRange(drawn.Fertility, 5, 15);
+        Assert.InRange(drawn.AccessibilityCost, 5, 12);
+    }
+
+    [Fact]
+    public void PlayCard_LandCard_FocusCostReflectsAccessibility()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        // Plant a card with known AccessibilityCost = 5 → cost = round(3 × 0.5) = 2
+        var cheapLand = new LandCard { DefinitionId = "land_plains", Fertility = 10, AccessibilityCost = 5 };
+        game.Hand.Add(cheapLand);
+        repo.Save(game);
+        var focusBefore = game.Resources.Focus;
+        var (result, _) = svc.PlayCard(game.GameId, cheapLand.InstanceId, 0, 4);
+        Assert.Equal(focusBefore - 2, result.Resources.Focus);
+    }
+
     // ── DrawFromDeck ────────────────────────────────────────────────────────
 
     [Fact]
