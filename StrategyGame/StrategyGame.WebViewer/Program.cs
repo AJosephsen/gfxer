@@ -364,7 +364,7 @@ function render(game) {
   }
   const totalPeople = res.people;
   const available = totalPeople - totalOccupied;
-  popBar.appendChild(resourceBox('people', 'Population', `${totalPeople}/${popCap || '?'}`, '👥'));
+  popBar.appendChild(resourceBox('people', 'Population', `${totalPeople}/${popCap}`, '👥'));
   popBar.appendChild(resourceBox('focus', 'Occupied', totalOccupied, '🔨'));
   popBar.appendChild(resourceBox('wood', 'Available', available, '🏠'));
   v.appendChild(popBar);

@@ -1123,4 +1123,31 @@ public sealed class GameServiceTests
         Assert.NotNull(settlement);
         Assert.InRange(settlement!.PopulationCapacity, 10, 40);
     }
+
+    // ── DeleteGame ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void DeleteGame_RemovesGame()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        svc.DeleteGame(game.GameId);
+        Assert.Empty(svc.ListGames());
+    }
+
+    [Fact]
+    public void DeleteGame_NonExistentThrows()
+    {
+        var svc = CreateService();
+        Assert.Throws<InvalidOperationException>(() => svc.DeleteGame("nonexistent"));
+    }
+
+    [Fact]
+    public void DeleteGame_LoadAfterDeleteThrows()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        svc.DeleteGame(game.GameId);
+        Assert.Throws<InvalidOperationException>(() => svc.LoadGame(game.GameId));
+    }
 }

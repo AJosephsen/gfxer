@@ -61,5 +61,13 @@ public sealed class GameRepository : IGameRepository
             .ToList();
     }
 
+    public void Delete(string gameId)
+    {
+        var path = GetPath(gameId);
+        if (!File.Exists(path))
+            throw new InvalidOperationException($"Game '{gameId}' not found.");
+        File.Delete(path);
+    }
+
     private string GetPath(string gameId) => Path.Combine(_savesDir, $"{gameId}.json");
 }

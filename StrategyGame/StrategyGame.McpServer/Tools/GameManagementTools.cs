@@ -82,4 +82,15 @@ public static class GameManagementTools
         sb.AppendLine($"Discard:    {game.DiscardPile.Count} cards");
         return sb.ToString().TrimEnd();
     }
+
+    [McpServerTool(Name = "delete_game")]
+    [Description("Permanently delete a saved game by its ID.")]
+    public static string DeleteGame(
+        GameService gameService,
+        [Description("The game ID to delete.")]
+        string gameId)
+    {
+        gameService.DeleteGame(gameId);
+        return $"Game '{gameId}' has been deleted.";
+    }
 }

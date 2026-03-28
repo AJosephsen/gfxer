@@ -20,6 +20,12 @@ public sealed class InMemoryGameRepository : IGameRepository
         return game;
     }
 
+    public void Delete(string gameId)
+    {
+        if (!_store.Remove(gameId))
+            throw new InvalidOperationException($"Game '{gameId}' not found.");
+    }
+
     public List<GameSummary> ListAll() =>
         _store.Values
               .Select(g => new GameSummary(g.GameId, g.PlayerName, g.Round, g.LastPlayedAt))

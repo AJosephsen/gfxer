@@ -1,0 +1,9 @@
+[    9109ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/0b63e14a:0
+[   10117ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/0b63e14a:0
+[   10123ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games:0
+[   10148ms] TypeError: Failed to fetch
+    at loadGames (http://localhost:5050/:186:21)
+[   11108ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/0b63e14a:0
+[   12116ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/0b63e14a:0
+[   13109ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/0b63e14a:0
+[   14107ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/0b63e14a:0

@@ -49,6 +49,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
     public List<GameSummary> ListGames() => repo.ListAll();
 
+    public void DeleteGame(string gameId) => repo.Delete(gameId);
+
     // ── Playing cards ───────────────────────────────────────────────────────
 
     /// <summary>
