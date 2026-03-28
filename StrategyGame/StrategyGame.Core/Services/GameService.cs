@@ -23,16 +23,22 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             Resources = new ResourceAmount(Food: 8, People: 5, Focus: ResourceAmount.MaxFocus)
         };
 
-        var landIds = catalog.LandCards.Select(d => d.Id).ToArray();
+        var usableLandIds = catalog.LandCards
+            .Where(d => d.Terrain != TerrainType.Wasteland)
+            .Select(d => d.Id).ToArray();
 
-        // Starting hand: 3 random land cards + 1 Settlement
+        // Starting hand: 3 random useful land cards + 1 Settlement (no wastelands in opening hand)
         for (int i = 0; i < 3; i++)
-            game.Hand.Add(LandCard.Create(landIds[Random.Shared.Next(landIds.Length)]));
+            game.Hand.Add(LandCard.Create(usableLandIds[Random.Shared.Next(usableLandIds.Length)]));
         game.Hand.Add(new BuildingCard { DefinitionId = "building_settlement" });
 
         // Pre-shuffle 500-card land deck (15 cards burned per round → ~33 rounds max)
+        // 30% of cards are wastelands (useless filler)
+        var allLandIds = catalog.LandCards.Select(d => d.Id).ToArray();
         game.LandDeck = Enumerable.Range(0, ResourceAmount.LandDeckSize)
-            .Select(_ => landIds[Random.Shared.Next(landIds.Length)])
+            .Select(_ => Random.Shared.Next(100) < 30
+                ? "land_wasteland"
+                : usableLandIds[Random.Shared.Next(usableLandIds.Length)])
             .ToList();
 
         repo.Save(game);
@@ -316,7 +322,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         }
 
         sb.AppendLine();
-        sb.AppendLine("Legend: FOR=Forest  PLN=Plains  HIL=Hill  BCH=Beach");
+        sb.AppendLine("Legend: FOR=Forest  PLN=Plains  HIL=Hill  BCH=Beach  WST=Wasteland");
         sb.AppendLine("        SET=Settlement  FRM=Farm  LMB=LumberCamp  FSH=FishingCamp  SHP=SheepPasture  !=disabled  ###=locked  ...=empty");
         return sb.ToString().TrimEnd();
     }
@@ -414,7 +420,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             TerrainType.Forest => "FOR",
             TerrainType.Plains => "PLN",
             TerrainType.Hill   => "HIL",
-            TerrainType.Beach  => "BCH",
+            TerrainType.Beach     => "BCH",
+            TerrainType.Wasteland => "WST",
             _ => "???"
         };
 

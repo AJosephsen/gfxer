@@ -37,6 +37,15 @@
       "investCost": { "food": 2, "people": 0 }
     },
     {
+      "type": "land",
+      "id": "land_wasteland",
+      "name": "Wasteland",
+      "description": "Barren, desolate terrain. Nothing can be built here.",
+      "terrain": "Wasteland",
+      "focusCost": 3,
+      "investCost": { "food": 2, "people": 0 }
+    },
+    {
       "type": "building",
       "id": "building_settlement",
       "name": "Settlement",

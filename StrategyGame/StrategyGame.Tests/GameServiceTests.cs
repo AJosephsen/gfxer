@@ -827,4 +827,57 @@ public sealed class GameServiceTests
         // (1,3) should now be unlocked (right neighbor of (1,2))
         Assert.False(updated.Board.GetCell(1, 3).IsLocked);
     }
+
+    // ── Wasteland ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public void PlayCard_Settlement_FailsOnWasteland()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        var wasteland = new LandCard { DefinitionId = "land_wasteland" };
+        var settlement = new BuildingCard { DefinitionId = "building_settlement" };
+        game.Hand.Add(wasteland);
+        game.Hand.Add(settlement);
+        repo.Save(game);
+        svc.PlayCard(game.GameId, wasteland.InstanceId, 0, 0);
+        Assert.Throws<InvalidOperationException>(() =>
+            svc.PlayCard(game.GameId, settlement.InstanceId, 0, 0));
+    }
+
+    [Fact]
+    public void PlayCard_Wasteland_CanBePlacedOnBoard()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        var wasteland = new LandCard { DefinitionId = "land_wasteland" };
+        game.Hand.Add(wasteland);
+        repo.Save(game);
+        var (updated, msg) = svc.PlayCard(game.GameId, wasteland.InstanceId, 0, 0);
+        Assert.NotNull(updated.Board.GetCell(0, 0).Land);
+        Assert.Contains("Wasteland", msg);
+    }
+
+    [Fact]
+    public void StartGame_DeckContainsWastelands()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        Assert.Contains(game.LandDeck, id => id == "land_wasteland");
+    }
+
+    [Fact]
+    public void StartGame_OpeningHandHasNoWastelands()
+    {
+        var svc = CreateService();
+        // Run several times to be confident
+        for (int i = 0; i < 20; i++)
+        {
+            var game = svc.StartGame("Alice");
+            Assert.DoesNotContain(game.Hand.OfType<LandCard>(),
+                c => c.DefinitionId == "land_wasteland");
+        }
+    }
 }
