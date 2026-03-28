@@ -17,4 +17,20 @@ public sealed class BuildingCard : CardBase
     /// Production scales linearly: output = base × (AssignedWorkers / Occupies).
     /// </summary>
     public int AssignedWorkers { get; set; } = 0;
+
+    /// <summary>
+    /// Maximum population this settlement can support (10–40, rolled at creation).
+    /// Only meaningful for Settlement buildings; 0 for non-settlements.
+    /// Total population is capped at the sum of all settlement PopulationCapacity on the board.
+    /// </summary>
+    public int PopulationCapacity { get; init; } = 0;
+
+    /// <summary>Create a new building card, rolling stats where applicable.</summary>
+    public static BuildingCard Create(string definitionId) => new()
+    {
+        DefinitionId = definitionId,
+        PopulationCapacity = definitionId == "building_settlement"
+            ? 10 + Random.Shared.Next(31)  // 10–40
+            : 0,
+    };
 }

@@ -66,13 +66,14 @@ public static class GameManagementTools
         var game = gameService.LoadGame(gameId);
         var occupied = gameService.GetOccupiedWorkers(game);
         var available = game.Resources.People - occupied;
+        var popCap = gameService.GetPopulationCap(game);
 
         var sb = new System.Text.StringBuilder();
         sb.AppendLine($"=== Game Status: {game.PlayerName} — Round {game.Round} ===");
         sb.AppendLine();
         sb.AppendLine($"Resources:  {game.Resources}");
         sb.AppendLine();
-        sb.AppendLine($"Population: {game.Resources.People} total");
+        sb.AppendLine($"Population: {game.Resources.People} total (cap: {popCap})");
         sb.AppendLine($"  Occupied: {occupied}");
         sb.AppendLine($"  Available: {available}");
         sb.AppendLine();

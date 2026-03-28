@@ -351,16 +351,20 @@ function render(game) {
   // Population / Workers bar
   const popBar = el('div', 'resources');
   let totalOccupied = 0;
+  let popCap = 0;
   if (game.board && game.board.cells) {
     for (const cell of game.board.cells) {
-      if (cell.building && cell.building.isActive) {
-        totalOccupied += cell.building.assignedWorkers || 0;
+      if (cell.building) {
+        popCap += cell.building.populationCapacity || 0;
+        if (cell.building.isActive) {
+          totalOccupied += cell.building.assignedWorkers || 0;
+        }
       }
     }
   }
   const totalPeople = res.people;
   const available = totalPeople - totalOccupied;
-  popBar.appendChild(resourceBox('people', 'Population', totalPeople, '👥'));
+  popBar.appendChild(resourceBox('people', 'Population', `${totalPeople}/${popCap || '?'}`, '👥'));
   popBar.appendChild(resourceBox('focus', 'Occupied', totalOccupied, '🔨'));
   popBar.appendChild(resourceBox('wood', 'Available', available, '🏠'));
   v.appendChild(popBar);
@@ -402,6 +406,9 @@ function render(game) {
         if (bDef && bDef.occupies > 0) {
           const assigned = cell.building.assignedWorkers || 0;
           html += `<span class="workers">${assigned}/${bDef.occupies} 👷</span>`;
+        }
+        if (cell.building.populationCapacity > 0) {
+          html += `<span class="workers">Cap: ${cell.building.populationCapacity} 🏘️</span>`;
         }
       }
       div.innerHTML = html;

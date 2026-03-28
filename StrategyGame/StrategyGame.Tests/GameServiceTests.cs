@@ -1042,4 +1042,85 @@ public sealed class GameServiceTests
         Assert.Contains("Population:", summary);
         Assert.Contains("available", summary);
     }
+
+    // ── Population Capacity ─────────────────────────────────────────────────
+
+    [Fact]
+    public void BuildingCard_Create_Settlement_RollsPopulationCapacity()
+    {
+        var card = BuildingCard.Create("building_settlement");
+        Assert.InRange(card.PopulationCapacity, 10, 40);
+    }
+
+    [Fact]
+    public void BuildingCard_Create_NonSettlement_HasZeroPopulationCapacity()
+    {
+        var card = BuildingCard.Create("building_farm");
+        Assert.Equal(0, card.PopulationCapacity);
+    }
+
+    [Fact]
+    public void GetPopulationCap_ReturnsZeroWithNoSettlements()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        Assert.Equal(0, svc.GetPopulationCap(game));
+    }
+
+    [Fact]
+    public void GetPopulationCap_SumsSettlementCapacities()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+
+        // Place two settlements with known capacities
+        var land1 = LandCard.Create("land_plains");
+        var land2 = LandCard.Create("land_forest");
+        var set1 = new BuildingCard { DefinitionId = "building_settlement", PopulationCapacity = 20 };
+        var set2 = new BuildingCard { DefinitionId = "building_settlement", PopulationCapacity = 15 };
+        game.Hand.AddRange(new CardBase[] { land1, land2, set1, set2 });
+        repo.Save(game);
+
+        svc.PlayCard(game.GameId, land1.InstanceId, 0, 0);
+        svc.PlayCard(game.GameId, set1.InstanceId, 0, 0);
+        svc.PlayCard(game.GameId, land2.InstanceId, 0, 1);
+        svc.PlayCard(game.GameId, set2.InstanceId, 0, 1);
+
+        var updated = repo.Load(game.GameId);
+        Assert.Equal(35, svc.GetPopulationCap(updated));
+    }
+
+    [Fact]
+    public void EndRound_CapsPopulationAtSettlementCapacity()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+
+        // Place a settlement with low capacity
+        var land = LandCard.Create("land_plains");
+        var settlement = new BuildingCard { DefinitionId = "building_settlement", PopulationCapacity = 3 };
+        game.Hand.AddRange(new CardBase[] { land, settlement });
+        repo.Save(game);
+
+        svc.PlayCard(game.GameId, land.InstanceId, 0, 0);
+        svc.PlayCard(game.GameId, settlement.InstanceId, 0, 0);
+
+        // People starts at 5, cap is 3 — should be capped after EndRound
+        var (result, summary) = svc.EndRound(game.GameId);
+        Assert.True(result.Resources.People <= 3, $"People should be capped at 3, was {result.Resources.People}");
+        Assert.Contains("capped", summary);
+    }
+
+    [Fact]
+    public void StartGame_SettlementInHand_HasPopulationCapacity()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        var settlement = game.Hand.OfType<BuildingCard>()
+            .FirstOrDefault(c => c.DefinitionId == "building_settlement");
+        Assert.NotNull(settlement);
+        Assert.InRange(settlement!.PopulationCapacity, 10, 40);
+    }
 }

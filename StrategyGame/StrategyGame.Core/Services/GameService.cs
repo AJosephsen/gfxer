@@ -30,7 +30,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         // Starting hand: 3 random useful land cards + 1 Settlement (no wastelands in opening hand)
         for (int i = 0; i < 3; i++)
             game.Hand.Add(LandCard.Create(usableLandIds[Random.Shared.Next(usableLandIds.Length)]));
-        game.Hand.Add(new BuildingCard { DefinitionId = "building_settlement" });
+        game.Hand.Add(BuildingCard.Create("building_settlement"));
 
         // Pre-shuffle 500-card land deck (15 cards burned per round → ~33 rounds max)
         // 30% of cards are wastelands (useless filler)
@@ -192,8 +192,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         game.Resources = game.Resources.Subtract(def.InvestCost);
 
         CardBase newCard = def is LandDefinition
-            ? new LandCard { DefinitionId = cardDefinitionId }
-            : new BuildingCard { DefinitionId = cardDefinitionId };
+            ? LandCard.Create(cardDefinitionId)
+            : BuildingCard.Create(cardDefinitionId);
 
         game.Hand.Add(newCard);
         game.LastPlayedAt = DateTimeOffset.UtcNow;
@@ -303,6 +303,18 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             sb.AppendLine($"Production:    +{totalProduction}");
         }
 
+        // ── Population cap (sum of settlement capacities) ───────────────
+        var popCap = game.Board.AllCells()
+            .Where(c => c.Building is not null)
+            .Sum(c => c.Building!.PopulationCapacity);
+
+        if (popCap > 0 && game.Resources.People > popCap)
+        {
+            var excess = game.Resources.People - popCap;
+            game.Resources = game.Resources with { People = popCap };
+            sb.AppendLine($"Population:    capped at {popCap} (excess {excess} lost)");
+        }
+
         // ── Upkeep phase ────────────────────────────────────────────────
         var paidUpkeep = ResourceAmount.Zero;
         var disabledNames = new List<string>();
@@ -376,6 +388,15 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
     public int GetAvailableWorkers(GameState game) =>
         game.Resources.People - GetOccupiedWorkers(game);
 
+    /// <summary>
+    /// Population cap = sum of PopulationCapacity across all settlements on the board.
+    /// Returns 0 if no settlements have been placed.
+    /// </summary>
+    public int GetPopulationCap(GameState game) =>
+        game.Board.AllCells()
+            .Where(c => c.Building is not null)
+            .Sum(c => c.Building!.PopulationCapacity);
+
     // ── Rendering ───────────────────────────────────────────────────────────
 
     public string RenderBoard(GameState game)
@@ -383,7 +404,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var sb = new StringBuilder();
         var occupied = GetOccupiedWorkers(game);
         var available = game.Resources.People - occupied;
-        sb.AppendLine($"Round {game.Round} | {game.PlayerName} | {game.Resources} | Deck: {game.LandDeck.Count} cards | Workers: {occupied}/{game.Resources.People} occupied, {available} available");
+        var popCap = GetPopulationCap(game);
+        sb.AppendLine($"Round {game.Round} | {game.PlayerName} | {game.Resources} | Deck: {game.LandDeck.Count} cards | Workers: {occupied}/{game.Resources.People} occupied, {available} available | Pop cap: {popCap}");
         sb.AppendLine();
         sb.Append("      ");
         for (int c = 0; c < Board.Cols; c++) sb.Append($"  [{c}]  ");
@@ -431,6 +453,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
                 var playCostStr = bDef.PlayCost.IsEmpty ? "" : $" + {bDef.PlayCost}";
                 sb.AppendLine($"      Play cost: {def.FocusCost} Focus{playCostStr}");
                 if (bDef.Occupies > 0) sb.AppendLine($"      Workers:   0–{bDef.Occupies} (assigned round-robin at end of round, scales production)");
+                if (card is BuildingCard bc && bc.PopulationCapacity > 0)
+                    sb.AppendLine($"      Pop cap:   {bc.PopulationCapacity} (max population this settlement supports)");
                 if (!bDef.Production.IsEmpty) sb.AppendLine($"      Max prod:  {bDef.Production}/round (at full workers)");
                 if (!bDef.Upkeep.IsEmpty)     sb.AppendLine($"      Upkeep:    {bDef.Upkeep}/round");
                 var terrain = bDef.AllowedTerrains.Length > 0
@@ -520,7 +544,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         };
         var flag = cell.Building.IsActive ? "" : "!";
         var workers = bDef.Occupies > 0 ? $"{cell.Building.AssignedWorkers}/{bDef.Occupies}" : "";
-        return $"{bAbbr}{flag}{workers}";
+        var popCap = cell.Building.PopulationCapacity > 0 ? $"p{cell.Building.PopulationCapacity}" : "";
+        return $"{bAbbr}{flag}{workers}{popCap}";
     }
 
     private static void ValidateBoardPosition(int row, int col)
