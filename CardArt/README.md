@@ -1,6 +1,201 @@
 # CardArt — Card Art Generation Guide
 
-Generate card art for the strategy game using OpenAI's `gpt-image-1` model and composite it into a card frame template.
+Generate card art for **Ironhold: Wars of the Realm** using OpenAI's `gpt-image-1` model, composite it into the card frame, and export game-ready assets.
+
+## Prerequisites
+
+- **OpenAI API key** stored in `../api.token` (one directory up from CardArt)
+  ```bash
+  echo 'sk-...' > /workspaces/gfxer/api.token
+  ```
+- **Python 3** with **Pillow** (`pip3 install Pillow`)
+- **curl** (pre-installed in the dev container)
+
+## Quick Start
+
+```bash
+cd /workspaces/gfxer/CardArt
+
+# 1. Generate art from a prompt file
+./generate.sh plains.txt
+
+# 2. Composite the art into the card frame
+python3 compose.py generated/plains-20260328-215433-1.png
+
+# 3. Copy the card to assets
+cp generated/plains-20260328-215433-1-card.png assets/
+
+# Result: assets/plains-20260328-215433-1-card.png
+```
+
+## Directory Structure
+
+```
+CardArt/
+├── generate.sh         # Text-to-image generation script
+├── compose.py          # Composites art into card frame
+├── make_frame.py       # Generates frame.png (structural only — no text)
+├── frame.png           # Card frame template (1024×1536)
+├── mask.png            # Inpainting mask (kept for reference)
+├── plains.txt          # Prompt files for each card type
+├── forest.txt
+├── hill.txt
+├── beach.txt
+├── wasteland.txt
+├── settlement.txt
+├── farm.txt
+├── lumber-camp.txt
+├── fishing-camp.txt
+├── sheep-pasture.txt
+├── board-background.txt
+├── assets/             # Full-resolution composed cards (1024×1536)
+└── generated/          # Raw output directory (gitignored)
+    ├── plains-20260328-215433-1.png          # Raw art
+    ├── plains-20260328-215433-1.prompt.txt   # Saved prompt
+    └── plains-20260328-215433-1-card.png     # Composed card
+```
+
+## Step-by-Step Workflow
+
+### 1. Write a Prompt
+
+Create a `.txt` file with your scene description. No text or borders — those are layered by the UI.
+
+```bash
+cat plains.txt
+# A lush green plains landscape for a fantasy card game. Rolling grasslands under a warm golden
+# sky, painterly style, rich colors, suitable as card art background. No text, no border.
+```
+
+**Tips:**
+- Specify art style: `painterly style`, `oil painting`, `fantasy illustration`
+- Mention the purpose: `for a fantasy card game`, `suitable as card art background`
+- Always end with: `No text, no border.`
+
+### 2. Generate Art
+
+```bash
+./generate.sh <prompt_file>
+```
+
+**Output naming:** `{promptname}-{YYYYMMDD-HHMMSS}-{version}.png`
+
+**Environment variables:**
+
+| Variable | Default       | Options                                               |
+|----------|---------------|-------------------------------------------------------|
+| `SIZE`   | `1024x1024`   | `1024x1024`, `1024x1536` (portrait), `1536x1024` (landscape) |
+| `MODEL`  | `gpt-image-1` | Any OpenAI image model                                |
+
+```bash
+# Standard card art (square, cropped to fit by compose.py)
+./generate.sh plains.txt
+
+# Wide landscape for background images
+SIZE=1536x1024 ./generate.sh board-background.txt
+```
+
+### 3. Composite into Card Frame
+
+```bash
+python3 compose.py <art_image> [output_path]
+```
+
+The frame provides dark border, title bar, art window, and stats panel — all text and attributes are rendered by the UI layer at runtime, not baked into the image.
+
+```bash
+python3 compose.py generated/forest-20260328-215955-1.png
+# → generated/forest-20260328-215955-1-card.png  (1024×1536)
+```
+
+### 4. Copy to Assets
+
+Full-resolution composed cards go to `CardArt/assets/`:
+
+```bash
+cp generated/forest-20260328-215955-1-card.png assets/
+```
+
+### 5. Export Game-Ready WebPs
+
+The game uses two sets of smaller WebPs:
+
+| Path | Size | Use |
+|------|------|-----|
+| `StrategyGame/Assets/Cards/` | 256×384 | Hand card display |
+| `StrategyGame/Assets/Lands/` | 200×160 | Board cell backgrounds |
+
+Use this Python snippet to convert a single card:
+
+```python
+from PIL import Image
+
+src = 'generated/forest-20260328-215955-1.png'   # raw art (for land WebP)
+card_src = 'generated/forest-20260328-215955-1-card.png'  # composed (for card WebP)
+card_id = 'land_forest'
+
+# Board cell (200×160, cover-crop from raw art)
+img = Image.open(src).convert('RGB')
+scale = max(200/img.width, 160/img.height)
+img = img.resize((int(img.width*scale), int(img.height*scale)), Image.LANCZOS)
+img = img.crop(((img.width-200)//2, (img.height-160)//2,
+                (img.width-200)//2+200, (img.height-160)//2+160))
+img.save(f'../StrategyGame/Assets/Lands/{card_id}.webp', 'WEBP', quality=82)
+
+# Hand card (256×384, from composed card)
+card = Image.open(card_src).convert('RGBA')
+card.resize((256, 384), Image.LANCZOS).save(
+    f'../StrategyGame/Assets/Cards/{card_id}.webp', 'WEBP', quality=85)
+```
+
+**Card IDs** match the catalog: `land_plains`, `land_forest`, `land_hill`, `land_beach`, `land_wasteland`, `building_settlement`, `building_farm`, `building_lumber_camp`, `building_fishing_camp`, `building_sheep_pasture`.
+
+## Regenerating All Cards at Once
+
+```bash
+cd /workspaces/gfxer/CardArt
+
+for prompt in plains forest hill beach wasteland settlement farm lumber-camp fishing-camp sheep-pasture; do
+  echo "=== $prompt ==="
+  out=$(bash generate.sh ${prompt}.txt | grep "Image:" | awk '{print $2}')
+  python3 compose.py "$out"
+  cp "${out%.png}-card.png" assets/
+done
+```
+
+Then re-run the WebP export script to update `StrategyGame/Assets/`.
+
+## Card Frame Layout
+
+The frame is purely structural — **no text is baked in**. All card attributes are rendered by the web viewer at runtime.
+
+```
+┌──────────────────────────┐
+│       [title bar]        │  ← 100px — name rendered by UI
+├──────────────────────────┤  ← Gold divider
+│                          │
+│       Art Window         │  ← 960×1004px
+│   (filled by compose)    │
+│                          │
+├──────────────────────────┤  ← Gold divider
+│  [stats panel]           │  ← 400px — stats rendered by UI
+└──────────────────────────┘
+     32px border all around
+```
+
+To change frame colours or proportions: edit `make_frame.py` and run `python3 make_frame.py` to regenerate `frame.png`.
+
+## Notes
+
+- `generated/` is gitignored. Committed outputs live in `assets/` and `StrategyGame/Assets/`.
+- Each generation saves the prompt alongside the image as `.prompt.txt` for reproducibility.
+- API costs: `gpt-image-1` charges per image. Landscape (`1536x1024`) costs more than square (`1024x1024`).
+- After updating game WebPs, copy them to the running server's build output to hot-reload without restart:
+  ```bash
+  cp StrategyGame/Assets/Lands/land_beach.webp \
+     StrategyGame/StrategyGame.WebViewer/bin/Release/net10.0/Assets/Lands/
+  ```
+
 
 ## Prerequisites
 
