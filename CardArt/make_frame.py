@@ -14,7 +14,7 @@ and everything else as white (= "keep").
 Size: 1024×1536 (portrait, supported by gpt-image-1)
 """
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +35,6 @@ BORDER_COLOR = (30, 25, 20, 255)       # dark brown/black
 TITLE_BG = (45, 38, 32, 255)           # dark wood
 STATS_BG = (40, 35, 30, 255)           # slightly different dark
 DIVIDER_COLOR = (120, 100, 70, 255)    # gold-ish accent
-TEXT_COLOR = (200, 185, 150, 255)       # warm off-white
 ART_AREA = (245, 235, 220, 255)        # light parchment (opaque placeholder)
 
 # ── Build the frame ─────────────────────────────────────────────────────────
@@ -69,47 +68,7 @@ for x in [accent_inset, W - accent_inset - corner_size]:
     for y in [accent_inset, H - accent_inset - corner_size]:
         draw.rectangle([x, y, x + corner_size, y + corner_size], fill=DIVIDER_COLOR)
 
-# Title placeholder text
-try:
-    font_title = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 42)
-    font_stats = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
-    font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 22)
-except OSError:
-    font_title = ImageFont.load_default()
-    font_stats = font_title
-    font_small = font_title
-
-# Title text (centered)
-title_text = "Card Name"
-bbox = draw.textbbox((0, 0), title_text, font=font_title)
-tw = bbox[2] - bbox[0]
-draw.text(((W - tw) // 2, BORDER + 25), title_text, fill=TEXT_COLOR, font=font_title)
-
-# Stats panel content placeholders
-panel_x = BORDER + 24
-panel_y = STATS_TOP + 24
-line_h = 40
-
-stats_lines = [
-    ("Type:", "Building · Settlement"),
-    ("Cost:", "4 Focus"),
-    ("Workers:", "0–3"),
-    ("Production:", "+2 People / round"),
-    ("Upkeep:", "1 Food / round"),
-    ("", ""),
-    ("Terrain:", "Any"),
-]
-
-for label, value in stats_lines:
-    if label:
-        draw.text((panel_x, panel_y), label, fill=DIVIDER_COLOR, font=font_stats)
-        draw.text((panel_x + 180, panel_y), value, fill=TEXT_COLOR, font=font_stats)
-    panel_y += line_h
-
-# Description at bottom of stats
-desc_y = H - BORDER - 60
-desc_text = "A small community of settlers producing people each round."
-draw.text((panel_x, desc_y), desc_text, fill=(160, 150, 130, 255), font=font_small)
+# Text (title, stats, description) is intentionally omitted — rendered by the UI layer.
 
 frame_path = os.path.join(OUT_DIR, "frame.png")
 frame.save(frame_path)

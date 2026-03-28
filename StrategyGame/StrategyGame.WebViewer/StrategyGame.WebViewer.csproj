@@ -8,4 +8,9 @@
   <ItemGroup>
     <ProjectReference Include="..\StrategyGame.Core\StrategyGame.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\Assets\Cards\*" CopyToOutputDirectory="PreserveNewest" LinkBase="Assets/Cards/" />
+    <Content Include="..\Assets\Lands\*" CopyToOutputDirectory="PreserveNewest" LinkBase="Assets/Lands/" />
+    <Content Include="..\Assets\UI\*" CopyToOutputDirectory="PreserveNewest" LinkBase="Assets/UI/" />
+  </ItemGroup>
 </Project>
