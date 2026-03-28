@@ -1,0 +1,25 @@
+[  424129ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  425091ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  426090ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  427090ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  428090ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  429091ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  430092ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  431090ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  432090ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  433091ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  434090ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  435090ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  436090ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  437093ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  438090ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  439090ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  440091ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5050/api/games/0b63e14a:0
+[  482131ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/34ee63ed:0
+[  483121ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/34ee63ed:0
+[  484116ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/34ee63ed:0
+[  485124ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/34ee63ed:0
+[  486120ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/34ee63ed:0
+[  487127ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/34ee63ed:0
+[  488113ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/34ee63ed:0
+[  489118ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5050/api/games/34ee63ed:0
