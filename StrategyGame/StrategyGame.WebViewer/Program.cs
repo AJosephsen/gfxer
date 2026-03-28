@@ -343,7 +343,6 @@ function render(game) {
   const res = game.resources;
   const resBar = el('div', 'resources');
   resBar.appendChild(resourceBox('food', 'Food', res.food, '🌾'));
-  resBar.appendChild(resourceBox('people', 'People', res.people, '👤'));
   resBar.appendChild(resourceBox('wood', 'Wood', res.wood, '🪵'));
   resBar.appendChild(resourceBox('focus', 'Focus', `${res.focus}/14`, '⚡'));
   resBar.appendChild(resourceBox('deck', 'Deck', game.landDeck ? game.landDeck.length : '?', '🃏'));
@@ -361,7 +360,7 @@ function render(game) {
   }
   const totalPeople = res.people;
   const available = totalPeople - totalOccupied;
-  popBar.appendChild(resourceBox('people', 'Total Pop', totalPeople, '👥'));
+  popBar.appendChild(resourceBox('people', 'Population', totalPeople, '👥'));
   popBar.appendChild(resourceBox('focus', 'Occupied', totalOccupied, '🔨'));
   popBar.appendChild(resourceBox('wood', 'Available', available, '🏠'));
   v.appendChild(popBar);
