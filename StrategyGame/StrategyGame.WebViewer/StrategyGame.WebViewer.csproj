@@ -13,5 +13,6 @@
     <Content Include="..\Assets\Lands\*" CopyToOutputDirectory="PreserveNewest" LinkBase="Assets/Lands/" />
     <Content Include="..\Assets\UI\*" CopyToOutputDirectory="PreserveNewest" LinkBase="Assets/UI/" />
     <Content Update="changelog.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Update="version.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

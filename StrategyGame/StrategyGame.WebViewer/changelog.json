@@ -1,5 +1,10 @@
 [
   {
+    "hash": "cbae041",
+    "message": "feat: build-time changelog.json from git, no runtime git access in WebViewer",
+    "date": "2026-03-29"
+  },
+  {
     "hash": "4b041d5",
     "message": "test: replace hard-coded v0.1.0 check with semver >= baseline assertion",
     "date": "2026-03-29"

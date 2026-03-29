@@ -118,18 +118,19 @@ app.MapGet("/assets/cards/{filename}", (string filename) =>
     return Results.File(path, "image/webp");
 });
 
-// Version info — changelog built at deploy time by rebuild.sh
+// Version info — version.txt and changelog.json built at deploy time by rebuild.sh
 var changelogPath = Path.Combine(AppContext.BaseDirectory, "changelog.json");
 var changelogJson = File.Exists(changelogPath) ? File.ReadAllText(changelogPath) : "[]";
+var versionPath = Path.Combine(AppContext.BaseDirectory, "version.txt");
+var buildVersion = File.Exists(versionPath) ? File.ReadAllText(versionPath).Trim() : "unknown";
 
 app.MapGet("/api/version", () =>
 {
     return Results.Content($$"""
     {
       "name": "Ironhold \u2014 Wars of the Realm",
-      "version": "{{System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "1.0.0"}}",
+      "version": "{{buildVersion}}",
       "framework": "{{System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}}",
-      "informationalVersion": "{{(System.Reflection.Assembly.GetEntryAssembly()?.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false).OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "n/a")}}",
       "changelog": {{changelogJson}}
     }
     """, "application/json");
@@ -867,7 +868,6 @@ async function refreshInfoPopup() {
     let html = `<div class="info-section-title">Version</div>`;
     html += kv('Game', ver.name);
     html += kv('Version', ver.version);
-    html += kv('Build', ver.informationalVersion ? ver.informationalVersion.split('+')[1]?.slice(0,8) ?? ver.version : ver.version);
     html += kv('Runtime', ver.framework);
     html += `<div class="info-section-gap"></div>`;
 
