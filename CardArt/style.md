@@ -1,10 +1,10 @@
 # CardArt — Visual Style Guide
 
-## Target Style: Bold Symbolic Fantasy Illustration
+## Target Style: Retro 16-bit Pixel Art
 
-All card art for **Ironhold: Wars of the Realm** uses a consistent bold symbolic illustration style —
-abstract, iconic, and clearly fantasy/adventure themed. Not painterly realism, not children's cartoon.
-Think board game card art: clean graphic shapes, strong symbolic imagery, mood through colour.
+All card art for **Ironhold: Wars of the Realm** uses a retro 16-bit pixel art style inspired by
+classic SNES/Mega Drive era RPG and strategy games. Clean, chunky pixels, limited palette per scene,
+and immediately readable terrain types — like a zoomed-in tile from a beloved retro game.
 
 ---
 
@@ -12,15 +12,63 @@ Think board game card art: clean graphic shapes, strong symbolic imagery, mood t
 
 | Principle | Description |
 |-----------|-------------|
-| **Flat & graphic** | No photorealism. Solid or gently-shaded fills, minimal surface texture. |
-| **Bold outlines** | Strong dark outlines around all forms — shapes read clearly at small sizes. |
-| **Abstract & symbolic** | Simplified, geometric forms that evoke the subject rather than replicate it realistically. |
-| **Iconic composition** | One dominant symbolic element anchors the scene — instantly readable as the card type. |
-| **Rich, moody palette** | Saturated but considered colours with clear contrast. Each card type has a signature hue. |
-| **Fantasy adventure tone** | Atmospheric and evocative — not dark or violent, but with a sense of world and adventure. |
-| **Minimal clutter** | No fine details, no text, no border, no UI elements. |
+| **Pixel art** | Visible square pixels, chunky and clean. No anti-aliasing blur. |
+| **16-bit era** | SNES / Mega Drive aesthetic — more detail than 8-bit but still clearly pixelated. |
+| **Limited palette** | Each scene uses a tight, harmonious colour palette of 8–16 colours max. |
+| **Iconic readability** | Terrain type is instantly obvious from the pixel art composition. |
+| **Isometric or side-on** | Slight isometric angle or classic side-scrolling perspective typical of retro RPGs. |
+| **Fantasy RPG mood** | Feels like a tile or scene from a classic fantasy strategy/RPG game. |
+| **No text, no border** | Clean art area only — UI is handled separately. |
 
 ---
+
+## Prompt Recipe
+
+Every prompt is built from four parts:
+
+```
+<scene description>, 16-bit pixel art style, SNES era retro RPG aesthetic,
+limited colour palette, chunky visible pixels, [PERSPECTIVE], fantasy strategy game tile,
+no text, no border.
+```
+
+---
+
+## Card-Type Colour Palette
+
+| Card Type       | Dominant Colour | Accent Colour  |
+|-----------------|-----------------|----------------|
+| Plains          | Bright grass green | Sky blue    |
+| Forest          | Dark pine green | Warm amber     |
+| Beach           | Sandy tan       | Ocean blue     |
+| Hill            | Olive green     | Stone grey     |
+| Wasteland       | Ash grey        | Burnt orange   |
+| Farm            | Golden yellow   | Earthy brown   |
+| Settlement      | Stone grey      | Warm terracotta|
+| Lumber Camp     | Pine green      | Wood brown     |
+| Fishing Camp    | Ocean blue      | Timber tan     |
+| Sheep Pasture   | Bright green    | White          |
+| Board Background| Deep navy blue  | Forest green   |
+
+---
+
+## Composition Guidelines
+
+- **Slight isometric or top-down** — classic RPG map tile perspective.
+- **One dominant terrain feature** — single focal element fills most of the frame.
+- **Pixel grid is visible** — art should look like it belongs in a retro game cartridge.
+- **Dithering welcome** — subtle pixel dithering for shading and transitions between colour areas.
+- **No characters** — terrain tiles only, no figures.
+
+---
+
+## Generation Prompt Template (copy + customise)
+
+```
+<terrain feature>, 16-bit pixel art style, SNES era retro RPG aesthetic,
+limited [DOMINANT COLOUR] and [ACCENT COLOUR] palette, chunky visible pixels,
+isometric RPG tile perspective, fantasy strategy game, no text, no border.
+```
 
 ## Prompt Recipe
 
