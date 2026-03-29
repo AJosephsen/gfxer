@@ -13,15 +13,15 @@ Each turn you draw cards, place land tiles on the board, build structures on top
 | **Food** | Consumed by upkeep; spent to buy cards from the market |
 | **People** | Spent to place buildings; consumed by upkeep |
 | **Wood** | Produced by Lumber Camps; spent to place buildings (e.g. Farm costs 10 Wood) |
-| **Focus** | Action points — spent to play cards; refills each round (capped at 14) |
+| **Flux** | Action points — spent to play cards; refills each round (capped at 14) |
 
 ## Core loop
 
-1. Draw a card (costs Focus)
-2. Play land cards onto empty cells (costs Focus)
-3. Play building cards onto cells that already have land (costs Focus + resources)
+1. Draw a card (costs Flux)
+2. Play land cards onto empty cells (costs Flux)
+3. Play building cards onto cells that already have land (costs Flux + resources)
 4. Buy new cards from the market (costs resources, added to hand)
-5. End the round → all buildings produce, upkeep is paid, Focus refills
+5. End the round → all buildings produce, upkeep is paid, Flux refills
 
 Buildings that can't pay upkeep become disabled (`!`) until you can afford them again.
 

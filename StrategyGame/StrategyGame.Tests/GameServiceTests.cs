@@ -40,7 +40,7 @@ public sealed class GameServiceTests
         var game = svc.StartGame("Alice");
         Assert.Equal(8, game.Resources.Food);
         Assert.Equal(5, game.Resources.People);
-        Assert.Equal(ResourceAmount.MaxFocus, game.Resources.Focus);
+        Assert.Equal(ResourceAmount.MaxFlux, game.Resources.Flux);
     }
 
     [Fact]
@@ -119,14 +119,14 @@ public sealed class GameServiceTests
     }
 
     [Fact]
-    public void LandCard_ComputeFocusCost_ScalesWithAccessibility()
+    public void LandCard_ComputeFluxCost_ScalesWithAccessibility()
     {
         var cheap  = new LandCard { DefinitionId = "land_plains", Fertility = 10, AccessibilityCost = 5  };
         var normal = new LandCard { DefinitionId = "land_plains", Fertility = 10, AccessibilityCost = 10 };
         var pricey = new LandCard { DefinitionId = "land_plains", Fertility = 10, AccessibilityCost = 12 };
-        Assert.Equal(2, cheap.ComputeFocusCost(3));   // round(3 × 0.5) = 2
-        Assert.Equal(3, normal.ComputeFocusCost(3));  // round(3 × 1.0) = 3
-        Assert.Equal(4, pricey.ComputeFocusCost(3));  // round(3 × 1.2) = 4
+        Assert.Equal(2, cheap.ComputeFluxCost(3));   // round(3 × 0.5) = 2
+        Assert.Equal(3, normal.ComputeFluxCost(3));  // round(3 × 1.0) = 3
+        Assert.Equal(4, pricey.ComputeFluxCost(3));  // round(3 × 1.2) = 4
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public sealed class GameServiceTests
     }
 
     [Fact]
-    public void PlayCard_LandCard_FocusCostReflectsAccessibility()
+    public void PlayCard_LandCard_FluxCostReflectsAccessibility()
     {
         var repo = new InMemoryGameRepository();
         var svc = new GameService(repo, new CardCatalog());
@@ -164,9 +164,9 @@ public sealed class GameServiceTests
         game.Hand.Add(cheapLand);
         game.Board.GetCell(0, 4).IsLocked = false;
         repo.Save(game);
-        var focusBefore = game.Resources.Focus;
+        var fluxBefore = game.Resources.Flux;
         var (result, _) = svc.PlayCard(game.GameId, cheapLand.InstanceId, 0, 4);
-        Assert.Equal(focusBefore - 2, result.Resources.Focus);
+        Assert.Equal(fluxBefore - 2, result.Resources.Flux);
     }
 
     // ── DrawFromDeck ────────────────────────────────────────────────────────
@@ -183,13 +183,13 @@ public sealed class GameServiceTests
     }
 
     [Fact]
-    public void DrawFromDeck_ConsumesFocus()
+    public void DrawFromDeck_ConsumesFlux()
     {
         var svc = CreateService();
         var game = svc.StartGame("Alice");
-        var focusBefore = game.Resources.Focus;
+        var fluxBefore = game.Resources.Flux;
         var (updated, _) = svc.DrawFromDeck(game.GameId);
-        Assert.Equal(focusBefore - ResourceAmount.DrawCardFocusCost, updated.Resources.Focus);
+        Assert.Equal(fluxBefore - ResourceAmount.DrawCardFluxCost, updated.Resources.Flux);
     }
 
     [Fact]
@@ -199,17 +199,17 @@ public sealed class GameServiceTests
         var game = svc.StartGame("Alice");
         var (_, message) = svc.DrawFromDeck(game.GameId);
         Assert.Contains("Drew", message);
-        Assert.Contains("Focus", message);
+        Assert.Contains("Flux", message);
     }
 
     [Fact]
-    public void DrawFromDeck_ThrowsWhenNoFocus()
+    public void DrawFromDeck_ThrowsWhenNoFlux()
     {
         var repo = new InMemoryGameRepository();
         var svc = new GameService(repo, new CardCatalog());
         var game = svc.StartGame("Alice");
-        // Drain all focus
-        game.Resources = game.Resources with { Focus = 0 };
+        // Drain all flux
+        game.Resources = game.Resources with { Flux = 0 };
         repo.Save(game);
         Assert.Throws<InvalidOperationException>(() => svc.DrawFromDeck(game.GameId));
     }
@@ -240,17 +240,17 @@ public sealed class GameServiceTests
     }
 
     [Fact]
-    public void PlayCard_LandCard_ConsumesFocus()
+    public void PlayCard_LandCard_ConsumesFlux()
     {
         var svc = CreateService();
         var game = svc.StartGame("Alice");
         var landCard = game.Hand.OfType<LandCard>().First();
         var catalog = new CardCatalog();
         var def = catalog.Get(landCard.DefinitionId);
-        var expectedCost = landCard.ComputeFocusCost(def.FocusCost);
-        var focusBefore = game.Resources.Focus;
+        var expectedCost = landCard.ComputeFluxCost(def.FluxCost);
+        var fluxBefore = game.Resources.Flux;
         var (updated, _) = svc.PlayCard(game.GameId, landCard.InstanceId, 0, 0);
-        Assert.Equal(focusBefore - expectedCost, updated.Resources.Focus);
+        Assert.Equal(fluxBefore - expectedCost, updated.Resources.Flux);
     }
 
     [Fact]
@@ -274,12 +274,12 @@ public sealed class GameServiceTests
     }
 
     [Fact]
-    public void PlayCard_FailsWhenNotEnoughFocus()
+    public void PlayCard_FailsWhenNotEnoughFlux()
     {
         var repo = new InMemoryGameRepository();
         var svc = new GameService(repo, new CardCatalog());
         var game = svc.StartGame("Alice");
-        game.Resources = game.Resources with { Focus = 0 };
+        game.Resources = game.Resources with { Flux = 0 };
         repo.Save(game);
         var landCard = game.Hand.OfType<LandCard>().First();
         Assert.Throws<InvalidOperationException>(() =>
@@ -564,25 +564,25 @@ public sealed class GameServiceTests
     }
 
     [Fact]
-    public void EndRound_RestoresFocus()
+    public void EndRound_RestoresFlux()
     {
         var repo = new InMemoryGameRepository();
         var svc = new GameService(repo, new CardCatalog());
         var game = svc.StartGame("Alice");
-        // Spend some focus first
-        game.Resources = game.Resources with { Focus = 0 };
+        // Spend some flux first
+        game.Resources = game.Resources with { Flux = 0 };
         repo.Save(game);
         var (updated, _) = svc.EndRound(game.GameId);
-        Assert.Equal(ResourceAmount.FocusPerRound, updated.Resources.Focus);
+        Assert.Equal(ResourceAmount.FluxPerRound, updated.Resources.Flux);
     }
 
     [Fact]
-    public void EndRound_FocusIsCappedAtMax()
+    public void EndRound_FluxIsCappedAtMax()
     {
         var svc = CreateService();
-        var game = svc.StartGame("Alice"); // starts with MaxFocus
+        var game = svc.StartGame("Alice"); // starts with MaxFlux
         var (updated, _) = svc.EndRound(game.GameId);
-        Assert.Equal(ResourceAmount.MaxFocus, updated.Resources.Focus);
+        Assert.Equal(ResourceAmount.MaxFlux, updated.Resources.Flux);
     }
 
     [Fact]
@@ -592,7 +592,7 @@ public sealed class GameServiceTests
         var game = svc.StartGame("Alice");
         var (_, summary) = svc.EndRound(game.GameId);
         Assert.Contains("Round 1", summary);
-        Assert.Contains("Focus", summary);
+        Assert.Contains("Flux", summary);
     }
 
     [Fact]

@@ -68,7 +68,7 @@ app.MapGet("/api/catalog", () =>
             production = new { food = b.Production.Food, people = b.Production.People, wood = b.Production.Wood },
             upkeep = new { food = b.Upkeep.Food, people = b.Upkeep.People, wood = b.Upkeep.Wood },
             playCost = new { food = b.PlayCost.Food, people = b.PlayCost.People, wood = b.PlayCost.Wood },
-            focusCost = b.FocusCost,
+            fluxCost = b.FluxCost,
             investCost = new { food = b.InvestCost.Food, people = b.InvestCost.People, wood = b.InvestCost.Wood }
         },
         LandDefinition l => new
@@ -78,7 +78,7 @@ app.MapGet("/api/catalog", () =>
             name = l.Name,
             description = l.Description,
             terrain = l.Terrain.ToString(),
-            focusCost = (int?)l.FocusCost,
+            fluxCost = (int?)l.FluxCost,
             investCost = new { food = l.InvestCost.Food, people = l.InvestCost.People, wood = l.InvestCost.Wood }
         } as object,
         _ => new { id = d.Id, type = "unknown", name = d.Name }
@@ -156,7 +156,7 @@ static class ViewerHtml
     background-attachment: fixed;
     color: var(--gold);
     min-height: 100vh;
-    padding: 20px;
+    padding: 8px;
   }
   /* Dark vignette overlay so UI elements stay readable over the art */
   body::before {
@@ -167,80 +167,143 @@ static class ViewerHtml
     pointer-events: none;
     z-index: 0;
   }
-  .header, .game-picker, #viewer { position: relative; z-index: 1; }
-  .header {
-    text-align: center;
-    margin-bottom: 16px;
-  }
-  .header h1 {
-    font-family: 'Cinzel Decorative', serif;
-    color: var(--gold-bright);
-    font-size: 36px;
-    letter-spacing: 6px;
-    text-shadow: 0 0 30px rgba(232,201,106,0.5), 0 2px 6px rgba(0,0,0,0.9);
-  }
-  .header-subtitle {
-    font-family: 'Cinzel', serif;
-    color: var(--gold-dim);
-    font-size: 12px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    margin-top: 4px;
-    margin-bottom: 2px;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
-  }
-  .header .status { color: var(--gold-dim); font-size: 10px; margin-top: 4px; letter-spacing: 1px; }
-  .header .status.live { color: #6dbf7e; }
+  #viewer { position: relative; z-index: 1; }
 
-  .game-picker {
+  /* ── Emblem overlay (top-left) ── */
+  #emblem {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 100;
+    width: 46px;
+    background: linear-gradient(170deg, rgba(14,10,4,0.97) 0%, rgba(24,18,7,0.98) 100%);
+    border: 1px solid var(--gold-dim);
+    box-shadow:
+      0 0 0 3px rgba(0,0,0,0.65),
+      0 0 0 4px var(--gold-dark),
+      0 6px 30px rgba(0,0,0,0.9);
+    border-radius: 4px;
+    padding: 8px 6px;
     text-align: center;
-    margin-bottom: 16px;
-  }
-  .game-picker select {
-    background: var(--panel-bg);
-    color: var(--gold);
-    border: 1px solid var(--panel-border);
-    padding: 8px 16px;
     font-family: 'Cinzel', serif;
-    font-size: 13px;
-    border-radius: 6px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: width 0.25s ease, padding 0.25s ease;
+    user-select: none;
+  }
+  #emblem.open {
+    width: 188px;
+    padding: 12px 10px 10px;
+    cursor: default;
+  }
+  .emblem-crest {
+    font-size: 18px;
+    opacity: 0.9;
+    line-height: 1;
     cursor: pointer;
   }
-
-  /* ── Compact stats bar ── */
-  .stats-bar {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-    font-size: 12px;
+  #emblem.open .emblem-crest { font-size: 15px; margin-bottom: 2px; cursor: default; }
+  .emblem-body {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.2s ease 0.1s;
   }
-  .stat-pill {
-    background: var(--panel-bg);
-    border: 1px solid var(--panel-border);
-    border-radius: 20px;
-    padding: 4px 12px;
+  #emblem.open .emblem-body {
+    display: block;
+    opacity: 1;
+  }
+  .emblem-title {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--gold-bright);
+    font-size: 15px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 14px rgba(232,201,106,0.5), 0 1px 4px rgba(0,0,0,0.9);
+  }
+  .emblem-subtitle {
+    color: var(--gold-dim);
+    font-size: 8px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .emblem-rule {
+    border: none;
+    border-top: 1px solid var(--gold-dark);
+    margin: 8px 4px;
+  }
+  #emblem select {
+    background: rgba(10,7,2,0.85);
+    color: var(--gold);
+    border: 1px solid var(--gold-dark);
+    padding: 4px 6px;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    border-radius: 3px;
+    cursor: pointer;
+    width: 100%;
+  }
+  .emblem-status {
+    color: var(--gold-dark);
+    font-size: 8px;
+    letter-spacing: 0.5px;
+    margin-top: 6px;
+  }
+  .emblem-close {
+    display: block;
+    color: var(--gold-dark);
+    font-size: 8px;
+    letter-spacing: 1px;
+    margin-top: 8px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .emblem-close:hover { color: var(--gold-dim); }
+  .emblem-status.live { color: #6dbf7e; }
+
+  /* ── Stats bar ── */
+  #stats-bar {
+    position: fixed;
+    top: 0;
+    left: 78px;
+    right: 0;
+    z-index: 99;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    background: linear-gradient(to bottom, rgba(10,7,3,0.92) 0%, rgba(10,7,3,0.0) 100%);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+  .sp {
+    background: rgba(14,10,4,0.82);
+    border: 1px solid var(--gold-dark);
+    border-radius: 14px;
+    padding: 3px 11px;
     display: flex;
     align-items: center;
     gap: 5px;
     white-space: nowrap;
-    font-family: 'Cinzel', serif;
   }
-  .stat-pill .emoji { font-size: 13px; }
-  .stat-pill .val { font-weight: 700; font-size: 13px; color: var(--gold-bright); }
-  .stat-pill .lbl { color: var(--gold-dim); font-size: 9px; text-transform: uppercase; letter-spacing: 1px; }
-
-  .info-bar {
-    text-align: center;
-    margin-bottom: 8px;
-    color: var(--gold-dim);
+  .sp .sv { font-weight: 700; color: var(--gold-bright); }
+  .sp .sl { color: var(--gold-dim); font-size: 8px; text-transform: uppercase; letter-spacing: 1px; }
+  #stats-bar .divider { color: var(--gold-dark); margin: 0 2px; }
+  #stats-bar .round-label {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--gold-bright);
+    font-size: 13px;
+    letter-spacing: 2px;
+    margin-right: 4px;
+  }
+  #stats-bar .player-label {
+    color: var(--parchment);
     font-size: 11px;
-    letter-spacing: 1px;
+    margin-right: 8px;
   }
-  .info-bar .round { color: var(--gold-bright); font-weight: 700; font-size: 14px; font-family: 'Cinzel Decorative', serif; letter-spacing: 2px; }
-  .info-bar .player { color: var(--parchment); }
+
+
 
   .board-container {
     display: flex;
@@ -386,15 +449,19 @@ static class ViewerHtml
 </style>
 </head>
 <body>
-<div class="header">
-  <h1>Ironhold</h1>
-  <p class="header-subtitle">Wars of the Realm</p>
-  <div class="status" id="status">Connecting...</div>
+<div id="emblem" title="Open menu">
+  <div class="emblem-crest">⚔</div>
+  <div class="emblem-body">
+    <div class="emblem-title">Ironhold</div>
+    <div class="emblem-subtitle">Wars of the Realm</div>
+    <hr class="emblem-rule">
+    <select id="gamePicker"><option value="">Choose a chronicle…</option></select>
+    <div id="status" class="emblem-status">Connecting…</div>
+    <span class="emblem-close" id="emblem-close">▲ close</span>
+  </div>
 </div>
 
-<div class="game-picker">
-  <select id="gamePicker"><option value="">Choose a chronicle...</option></select>
-</div>
+<div id="stats-bar"></div>
 
 <div id="viewer" class="empty-state">Choose a chronicle to watch</div>
 
@@ -454,11 +521,11 @@ async function poll() {
     lastJson = text;
     const game = JSON.parse(text);
     render(game);
-    document.getElementById('status').textContent = `Live — polling every 1s — ${new Date().toLocaleTimeString()}`;
-    document.getElementById('status').className = 'status live';
+    document.getElementById('status').textContent = `Live — ${new Date().toLocaleTimeString()}`;
+    document.getElementById('status').className = 'emblem-status live';
   } catch (e) {
     document.getElementById('status').textContent = `Error: ${e.message}`;
-    document.getElementById('status').className = 'status';
+    document.getElementById('status').className = 'emblem-status';
   }
 }
 
@@ -466,12 +533,7 @@ function render(game) {
   const v = document.getElementById('viewer');
   v.innerHTML = '';
 
-  // Info bar
-  const info = el('div', 'info-bar');
-  info.innerHTML = `<span class="round">Round ${game.round}</span> &nbsp;·&nbsp; <span class="player">${game.playerName}</span>`;
-  v.appendChild(info);
-
-  // Compact stats bar
+  // Resource calcs (used for both emblem and board render)
   const res = game.resources;
   let totalOccupied = 0;
   let popCap = 0;
@@ -484,16 +546,18 @@ function render(game) {
     }
   }
   const available = res.people - totalOccupied;
-  const statsBar = el('div', 'stats-bar');
-  statsBar.innerHTML = [
-    pill('food',   '🌾', res.food,              'Food'),
-    pill('wood',   '🪵', res.wood,              'Wood'),
-    pill('people', '👥', `${res.people}/${popCap}`, 'Pop'),
-    pill('focus',  '⚡', `${res.focus}/14`,     'Focus'),
-    pill('deck',   '🃏', game.landDeck ? game.landDeck.length : '?', 'Deck'),
-    pill('people', '🏠', available,             'Free'),
-  ].join('');
-  v.appendChild(statsBar);
+
+  // Update stats bar
+  document.getElementById('stats-bar').innerHTML =
+    `<span class="round-label">Round ${game.round}</span>` +
+    `<span class="player-label">${game.playerName}</span>` +
+    `<span class="divider">·</span>` +
+    sp('🌾', res.food, 'Food') +
+    sp('🪵', res.wood, 'Wood') +
+    sp('👥', `${res.people}/${popCap}`, 'Pop') +
+    sp('⚡', `${res.flux}/14`, 'Flux') +
+    sp('🃏', game.landDeck ? game.landDeck.length : '?', 'Deck') +
+    sp('🏠', available, 'Free');
 
   // Board — show first 10 cells in a 5×2 grid
   const boardWrap = el('div', 'board-container');
@@ -589,7 +653,7 @@ function makeCard(card) {
       rows.push(['Fertility', `×${(card.fertility / 10).toFixed(1)}`]);
     if (card.accessibilityCost)
       rows.push(['Access', `×${(card.accessibilityCost / 10).toFixed(1)}`]);
-    rows.push(['Focus', def.focusCost]);
+    rows.push(['Flux', def.fluxCost]);
   } else if (def) {
     if (def.occupies > 0)
       rows.push(['Workers', `0–${def.occupies}`]);
@@ -602,7 +666,7 @@ function makeCard(card) {
     if (def.upkeep?.food)   up.push(`${def.upkeep.food}🌾`);
     if (def.upkeep?.people) up.push(`${def.upkeep.people}👥`);
     if (up.length) rows.push(['–', up.join(' ')]);
-    rows.push(['Focus', def.focusCost]);
+    rows.push(['Flux', def.fluxCost]);
   }
 
   stats.innerHTML = rows.map(([l, v]) =>
@@ -613,8 +677,8 @@ function makeCard(card) {
   return cardDiv;
 }
 
-function pill(cls, emoji, value, label) {
-  return `<div class="stat-pill ${cls}"><span class="emoji">${emoji}</span><span class="val">${value}</span><span class="lbl">${label}</span></div>`;
+function sp(emoji, value, label) {
+  return `<div class="sp"><span>${emoji}</span><span class="sv">${value}</span><span class="sl">${label}</span></div>`;
 }
 
 function el(tag, cls) {
@@ -622,6 +686,20 @@ function el(tag, cls) {
   if (cls) e.className = cls;
   return e;
 }
+
+// Emblem expand/collapse
+const emblemEl = document.getElementById('emblem');
+document.getElementById('emblem-close').addEventListener('click', e => {
+  e.stopPropagation();
+  emblemEl.classList.remove('open');
+  emblemEl.title = 'Open menu';
+});
+emblemEl.addEventListener('click', () => {
+  if (!emblemEl.classList.contains('open')) {
+    emblemEl.classList.add('open');
+    emblemEl.title = '';
+  }
+});
 
 // Init
 document.getElementById('gamePicker').addEventListener('change', e => selectGame(e.target.value));

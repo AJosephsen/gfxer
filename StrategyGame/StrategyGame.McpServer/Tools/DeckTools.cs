@@ -11,7 +11,7 @@ public static class DeckTools
     [McpServerTool(Name = "draw_card")]
     [Description(
         "Draw the next land card from the map deck and add it to your hand. " +
-        "Costs 1 Focus. The deck starts with 500 cards; 15 are burned at the end of each round (~33 rounds max). " +
+        "Costs 1 Flux. The deck starts with 500 cards; 15 are burned at the end of each round (~33 rounds max). " +
         "Hand limit is 7 cards — discard first if full.")]
     public static string DrawCard(
         GameService gameService,
@@ -21,7 +21,7 @@ public static class DeckTools
         var (game, message) = gameService.DrawFromDeck(gameId);
         var sb = new System.Text.StringBuilder();
         sb.AppendLine(message);
-        sb.AppendLine($"Focus remaining: {game.Resources.Focus}/{ResourceAmount.MaxFocus}");
+        sb.AppendLine($"Flux remaining: {game.Resources.Flux}/{ResourceAmount.MaxFlux}");
         sb.AppendLine();
         sb.AppendLine(gameService.RenderHand(game));
         return sb.ToString().TrimEnd();

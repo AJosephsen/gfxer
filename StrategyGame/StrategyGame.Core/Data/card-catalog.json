@@ -6,7 +6,7 @@
       "name": "Forest",
       "description": "Dense woodland. Suitable terrain for most buildings.",
       "terrain": "Forest",
-      "focusCost": 3,
+      "fluxCost": 3,
       "investCost": { "food": 2, "people": 0 }
     },
     {
@@ -15,7 +15,7 @@
       "name": "Plains",
       "description": "Open grassland. Ideal for farming.",
       "terrain": "Plains",
-      "focusCost": 3,
+      "fluxCost": 3,
       "investCost": { "food": 2, "people": 0 }
     },
     {
@@ -24,7 +24,7 @@
       "name": "Hill",
       "description": "Rocky elevated terrain. Hard to farm but defensible.",
       "terrain": "Hill",
-      "focusCost": 3,
+      "fluxCost": 3,
       "investCost": { "food": 2, "people": 0 }
     },
     {
@@ -33,7 +33,7 @@
       "name": "Beach",
       "description": "Sandy coastal terrain. Good for trade routes.",
       "terrain": "Beach",
-      "focusCost": 3,
+      "fluxCost": 3,
       "investCost": { "food": 2, "people": 0 }
     },
     {
@@ -42,7 +42,7 @@
       "name": "Wasteland",
       "description": "Barren, desolate terrain. Nothing can be built here.",
       "terrain": "Wasteland",
-      "focusCost": 3,
+      "fluxCost": 3,
       "investCost": { "food": 2, "people": 0 }
     },
     {
@@ -53,7 +53,7 @@
       "buildingType": "Settlement",
       "allowedTerrains": [],
       "occupies": 0,
-      "focusCost": 4,
+      "fluxCost": 4,
       "playCost": { "food": 0 },
       "upkeep":   { "food": 1, "people": 0 },
       "production": { "food": 0, "people": 2 },
@@ -67,7 +67,7 @@
       "buildingType": "Farm",
       "allowedTerrains": ["Plains"],
       "occupies": 3,
-      "focusCost": 4,
+      "fluxCost": 4,
       "playCost": { "food": 0, "wood": 10 },
       "upkeep":   { "food": 0 },
       "production": { "food": 6, "people": 0 },
@@ -81,7 +81,7 @@
       "buildingType": "LumberCamp",
       "allowedTerrains": ["Forest"],
       "occupies": 2,
-      "focusCost": 4,
+      "fluxCost": 4,
       "playCost": { "food": 0 },
       "upkeep":   { "food": 0, "people": 0 },
       "production": { "food": 0, "people": 0, "wood": 4 },
@@ -95,7 +95,7 @@
       "buildingType": "FishingCamp",
       "allowedTerrains": ["Beach"],
       "occupies": 2,
-      "focusCost": 4,
+      "fluxCost": 4,
       "playCost": { "food": 0 },
       "upkeep":   { "food": 0, "people": 0 },
       "production": { "food": 4, "people": 0 },
@@ -109,7 +109,7 @@
       "buildingType": "SheepPasture",
       "allowedTerrains": ["Hill"],
       "occupies": 2,
-      "focusCost": 4,
+      "fluxCost": 4,
       "playCost": { "food": 0 },
       "upkeep":   { "food": 0, "people": 0 },
       "production": { "food": 4, "people": 0 },

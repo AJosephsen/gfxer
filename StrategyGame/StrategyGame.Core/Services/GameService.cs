@@ -20,7 +20,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var game = new GameState
         {
             PlayerName = playerName,
-            Resources = new ResourceAmount(Food: 8, People: 5, Focus: ResourceAmount.MaxFocus)
+            Resources = new ResourceAmount(Food: 8, People: 5, Flux: ResourceAmount.MaxFlux)
         };
 
         var usableLandIds = catalog.LandCards
@@ -75,14 +75,14 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             throw new InvalidOperationException(
                 $"Cell ({row},{col}) is locked. Place a land card on an adjacent cell first to unlock it.");
 
-        // Focus cost — land cards scale by their AccessibilityCost multiplier
-        int focusAmount = card is LandCard lc0
-            ? lc0.ComputeFocusCost(def.FocusCost)
-            : def.FocusCost;
-        var focusCost = new ResourceAmount(Focus: focusAmount);
-        if (!game.Resources.CanAfford(focusCost))
+        // Flux cost — land cards scale by their AccessibilityCost multiplier
+        int fluxAmount = card is LandCard lc0
+            ? lc0.ComputeFluxCost(def.FluxCost)
+            : def.FluxCost;
+        var fluxCost = new ResourceAmount(Flux: fluxAmount);
+        if (!game.Resources.CanAfford(fluxCost))
             throw new InvalidOperationException(
-                $"Not enough Focus to play {def.Name}. Need: {focusAmount} Focus, Have: {game.Resources.Focus} Focus.");
+                $"Not enough Flux to play {def.Name}. Need: {fluxAmount} Flux, Have: {game.Resources.Flux} Flux.");
 
         string message;
 
@@ -92,11 +92,11 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
                 throw new InvalidOperationException(
                     $"Cell ({row},{col}) already has {catalog.Get(cell.Land.DefinitionId).Name} land. Choose an empty cell.");
 
-            game.Resources = game.Resources.Subtract(focusCost);
+            game.Resources = game.Resources.Subtract(fluxCost);
             cell.Land = landCard;
             game.Board.UnlockAdjacent(row, col);
             game.Hand.RemoveAt(idx);
-            message = $"Placed {def.Name} land at ({row},{col}). Spent: {focusAmount} Focus.";
+            message = $"Placed {def.Name} land at ({row},{col}). Spent: {fluxAmount} Flux.";
         }
         else if (card is BuildingCard building)
         {
@@ -115,7 +115,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
                     $"{bDef.Name} cannot be built on {landDef.Terrain}. " +
                     $"Allowed terrain: {(bDef.AllowedTerrains.Length > 0 ? string.Join(", ", bDef.AllowedTerrains) : "any")}.");
 
-            var totalCost = bDef.PlayCost.Add(focusCost);
+            var totalCost = bDef.PlayCost.Add(fluxCost);
             if (!game.Resources.CanAfford(totalCost))
                 throw new InvalidOperationException(
                     $"Cannot afford {bDef.Name}. Need: {totalCost}, Have: {game.Resources}.");
@@ -141,7 +141,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
     /// <summary>
     /// Draw a random land card from the infinite map deck.
-    /// Costs DrawCardFocusCost Focus.
+    /// Costs DrawCardFluxCost Flux.
     /// </summary>
     public (GameState game, string message) DrawFromDeck(string gameId)
     {
@@ -151,9 +151,9 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             throw new InvalidOperationException(
                 $"Hand is full ({ResourceAmount.MaxHandSize}/{ResourceAmount.MaxHandSize}). Discard a card first using discard_card.");
 
-        if (game.Resources.Focus < ResourceAmount.DrawCardFocusCost)
+        if (game.Resources.Flux < ResourceAmount.DrawCardFluxCost)
             throw new InvalidOperationException(
-                $"Not enough Focus to draw a card. Need: {ResourceAmount.DrawCardFocusCost} Focus, Have: {game.Resources.Focus} Focus.");
+                $"Not enough Flux to draw a card. Need: {ResourceAmount.DrawCardFluxCost} Flux, Have: {game.Resources.Flux} Flux.");
 
         if (game.LandDeck.Count == 0)
             throw new InvalidOperationException(
@@ -165,14 +165,14 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
         var newCard = LandCard.Create(drawnId);
         game.Hand.Add(newCard);
-        game.Resources = game.Resources.Subtract(new ResourceAmount(Focus: ResourceAmount.DrawCardFocusCost));
+        game.Resources = game.Resources.Subtract(new ResourceAmount(Flux: ResourceAmount.DrawCardFluxCost));
 
         game.LastPlayedAt = DateTimeOffset.UtcNow;
         repo.Save(game);
 
         var message = $"Drew {drawn.Name} from the map deck (id: {newCard.InstanceId}). " +
                       $"Fertility ×{newCard.Fertility / 10.0:0.0}, Play cost ×{newCard.AccessibilityCost / 10.0:0.0}. " +
-                      $"Spent: {ResourceAmount.DrawCardFocusCost} Focus.";
+                      $"Spent: {ResourceAmount.DrawCardFluxCost} Flux.";
         return (game, message);
     }
 
@@ -343,13 +343,13 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         if (disabledNames.Count > 0)
             sb.AppendLine($"⚠ Disabled (unpaid upkeep): {string.Join(", ", disabledNames)}");
 
-        // Focus income: earn FocusPerRound each night, capped at MaxFocus
-        var focusBefore = game.Resources.Focus;
-        game.Resources = game.Resources.AddFocus(ResourceAmount.FocusPerRound);
-        var focusGained = game.Resources.Focus - focusBefore;
-        sb.AppendLine($"Focus:         +{focusGained} (now {game.Resources.Focus}/{ResourceAmount.MaxFocus})");
-        if (focusGained < ResourceAmount.FocusPerRound)
-            sb.AppendLine($"  (capped — would have gained {ResourceAmount.FocusPerRound}, had {focusBefore})");
+        // Flux income: earn FluxPerRound each night, capped at MaxFlux
+        var fluxBefore = game.Resources.Flux;
+        game.Resources = game.Resources.AddFlux(ResourceAmount.FluxPerRound);
+        var fluxGained = game.Resources.Flux - fluxBefore;
+        sb.AppendLine($"Flux:         +{fluxGained} (now {game.Resources.Flux}/{ResourceAmount.MaxFlux})");
+        if (fluxGained < ResourceAmount.FluxPerRound)
+            sb.AppendLine($"  (capped — would have gained {ResourceAmount.FluxPerRound}, had {fluxBefore})");
 
         sb.AppendLine($"Resources now: {game.Resources}");
 
@@ -454,7 +454,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             if (def is BuildingDefinition bDef)
             {
                 var playCostStr = bDef.PlayCost.IsEmpty ? "" : $" + {bDef.PlayCost}";
-                sb.AppendLine($"      Play cost: {def.FocusCost} Focus{playCostStr}");
+                sb.AppendLine($"      Play cost: {def.FluxCost} Flux{playCostStr}");
                 if (bDef.Occupies > 0) sb.AppendLine($"      Workers:   0–{bDef.Occupies} (assigned round-robin at end of round, scales production)");
                 if (card is BuildingCard bc && bc.PopulationCapacity > 0)
                     sb.AppendLine($"      Pop cap:   {bc.PopulationCapacity} (max population this settlement supports)");
@@ -468,11 +468,11 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             else if (def is LandDefinition lDef)
             {
                 var lCard = (LandCard)card;
-                var actualCost = lCard.ComputeFocusCost(def.FocusCost);
-                var costNote = actualCost != def.FocusCost ? $" (×{lCard.AccessibilityCost / 10.0:0.0} of base {def.FocusCost})" : "";
+                var actualCost = lCard.ComputeFluxCost(def.FluxCost);
+                var costNote = actualCost != def.FluxCost ? $" (×{lCard.AccessibilityCost / 10.0:0.0} of base {def.FluxCost})" : "";
                 sb.AppendLine($"      Terrain type: {lDef.Terrain}");
                 sb.AppendLine($"      Fertility:    ×{lCard.Fertility / 10.0:0.0}  (production bonus when built upon)");
-                sb.AppendLine($"      Play cost:    {actualCost} Focus{costNote}");
+                sb.AppendLine($"      Play cost:    {actualCost} Flux{costNote}");
             }
         }
 
@@ -502,14 +502,14 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             if (def is BuildingDefinition bDef)
             {
                 var playCostStr = bDef.PlayCost.IsEmpty ? "" : $" + {bDef.PlayCost}";
-                sb.AppendLine($"    Place cost: {def.FocusCost} Focus{playCostStr}");
+                sb.AppendLine($"    Place cost: {def.FluxCost} Flux{playCostStr}");
                 if (bDef.Occupies > 0) sb.AppendLine($"    Workers:    0–{bDef.Occupies} (round-robin, scales production)");
                 if (!bDef.Production.IsEmpty) sb.AppendLine($"    Max prod:   {bDef.Production}/round (at full workers)");
                 if (!bDef.Upkeep.IsEmpty)     sb.AppendLine($"    Upkeep:     {bDef.Upkeep}/round");
             }
             else
             {
-                sb.AppendLine($"    Place cost: {def.FocusCost} Focus");
+                sb.AppendLine($"    Place cost: {def.FluxCost} Flux");
             }
         }
         return sb.ToString().TrimEnd();

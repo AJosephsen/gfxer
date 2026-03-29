@@ -15,7 +15,7 @@ public sealed class LandCard : CardBase
 
     /// <summary>
     /// Terrain accessibility, in tenths (range 5–12).
-    /// 10 = 1.0× (average). Scales the Focus cost to play this card from hand.
+    /// 10 = 1.0× (average). Scales the Flux cost to play this card from hand.
     /// Roll: 5 + d(0–4) + d(0–3).
     /// </summary>
     public int AccessibilityCost { get; init; } = 10;
@@ -28,8 +28,8 @@ public sealed class LandCard : CardBase
         AccessibilityCost = 5 + Random.Shared.Next(5) + Random.Shared.Next(4), // 5–12
     };
 
-    /// <summary>Focus cost to play this card, derived from catalog base × AccessibilityCost.</summary>
-    public int ComputeFocusCost(int baseFocusCost) =>
-        Math.Max(1, (int)Math.Round(baseFocusCost * AccessibilityCost / 10.0,
+    /// <summary>Flux cost to play this card, derived from catalog base × AccessibilityCost.</summary>
+    public int ComputeFluxCost(int baseFluxCost) =>
+        Math.Max(1, (int)Math.Round(baseFluxCost * AccessibilityCost / 10.0,
             MidpointRounding.AwayFromZero));
 }

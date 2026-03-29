@@ -23,10 +23,10 @@ public abstract record CardDefinition
     public ResourceAmount InvestCost { get; init; } = ResourceAmount.Zero;
 
     /// <summary>
-    /// Focus spent when playing this card from hand onto the board.
+    /// Flux spent when playing this card from hand onto the board.
     /// Default is 3 for all card types.
     /// </summary>
-    public int FocusCost { get; init; } = 3;
+    public int FluxCost { get; init; } = 3;
 }
 
 public sealed record LandDefinition : CardDefinition

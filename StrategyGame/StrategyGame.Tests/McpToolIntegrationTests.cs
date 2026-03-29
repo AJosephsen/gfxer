@@ -87,13 +87,13 @@ public sealed class McpToolIntegrationTests
     // ── draw_card ────────────────────────────────────────────────────────────
 
     [Fact]
-    public void DrawCard_OutputMentionsDrewAndFocus()
+    public void DrawCard_OutputMentionsDrewAndFlux()
     {
         var svc = CreateService();
         var game = svc.StartGame("Alice");
         var output = DeckTools.DrawCard(svc, game.GameId);
         Assert.Contains("Drew", output);
-        Assert.Contains("Focus", output);
+        Assert.Contains("Flux", output);
     }
 
     [Fact]
@@ -162,7 +162,7 @@ public sealed class McpToolIntegrationTests
         var game = svc.StartGame("Alice");
         var output = RoundTools.EndRound(svc, game.GameId);
         Assert.Contains("End of Round 1", output);
-        Assert.Contains("Focus", output);
+        Assert.Contains("Flux", output);
         Assert.Contains("Round 2", output); // board is rendered after increment
     }
 
