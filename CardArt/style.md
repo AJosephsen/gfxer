@@ -1,9 +1,10 @@
 # CardArt — Visual Style Guide
 
-## Target Style: Flat Storybook Illustration
+## Target Style: Bold Symbolic Fantasy Illustration
 
-All card art for **Ironhold: Wars of the Realm** uses a consistent flat storybook illustration style
-designed to be instantly recognisable, visually simple, and friendly for all ages.
+All card art for **Ironhold: Wars of the Realm** uses a consistent bold symbolic illustration style —
+abstract, iconic, and clearly fantasy/adventure themed. Not painterly realism, not children's cartoon.
+Think board game card art: clean graphic shapes, strong symbolic imagery, mood through colour.
 
 ---
 
@@ -11,12 +12,12 @@ designed to be instantly recognisable, visually simple, and friendly for all age
 
 | Principle | Description |
 |-----------|-------------|
-| **Flat & graphic** | No photorealism. Solid or lightly-shaded colour fills, minimal texture. |
-| **Bold outlines** | Clear black or dark-coloured outlines around all shapes. |
-| **Simple shapes** | Scenes are built from simple, clean geometric forms — rounded hills, blocky buildings, puffy trees. |
-| **Iconic composition** | One clear focal element dominates the scene so the card type is instantly obvious even at small size. |
-| **Bright, saturated palette** | Vivid, warm, friendly colours. Each card type has a distinctive dominant hue. |
-| **Kid-friendly** | Cheerful, non-threatening atmosphere. Characters (if any) are small and cute. |
+| **Flat & graphic** | No photorealism. Solid or gently-shaded fills, minimal surface texture. |
+| **Bold outlines** | Strong dark outlines around all forms — shapes read clearly at small sizes. |
+| **Abstract & symbolic** | Simplified, geometric forms that evoke the subject rather than replicate it realistically. |
+| **Iconic composition** | One dominant symbolic element anchors the scene — instantly readable as the card type. |
+| **Rich, moody palette** | Saturated but considered colours with clear contrast. Each card type has a signature hue. |
+| **Fantasy adventure tone** | Atmospheric and evocative — not dark or violent, but with a sense of world and adventure. |
 | **Minimal clutter** | No fine details, no text, no border, no UI elements. |
 
 ---
@@ -26,8 +27,9 @@ designed to be instantly recognisable, visually simple, and friendly for all age
 Every prompt is built from four parts:
 
 ```
-<scene description>, flat storybook illustration style, bold outlines, simple shapes,
-bright vibrant colours, clear focal point, children's book art, no text, no border.
+<scene description>, bold symbolic flat illustration style, strong graphic outlines,
+abstract simplified shapes, rich [DOMINANT COLOUR] and [ACCENT COLOUR], fantasy adventure mood,
+board game card art style, no text, no border.
 ```
 
 ---
@@ -63,9 +65,9 @@ bright vibrant colours, clear focal point, children's book art, no text, no bord
 ## Generation Prompt Template (copy + customise)
 
 ```
-<Hero element> in <setting>, flat storybook illustration style, bold dark outlines,
-simple geometric shapes, bright [DOMINANT COLOUR] and [ACCENT COLOUR], clear and iconic,
-children's book illustration, suitable as card art background. No text, no border.
+<Hero element> in <setting>, bold symbolic flat illustration style, strong graphic outlines,
+abstract simplified shapes, rich [DOMINANT COLOUR] and [ACCENT COLOUR], fantasy adventure mood,
+board game card art style, suitable as card art background. No text, no border.
 ```
 
 ---
