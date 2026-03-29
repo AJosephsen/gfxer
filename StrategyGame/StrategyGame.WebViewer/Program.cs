@@ -554,10 +554,9 @@ function render(game) {
     `<span class="divider">·</span>` +
     sp('🌾', res.food, 'Food') +
     sp('🪵', res.wood, 'Wood') +
-    sp('👥', `${res.people}/${popCap}`, 'Pop') +
-    sp('⚡', `${res.flux}/14`, 'Flux') +
-    sp('🃏', game.landDeck ? game.landDeck.length : '?', 'Deck') +
-    sp('🏠', available, 'Free');
+    sp('👥', `${res.people}/${popCap} · ${totalOccupied}⛏`, 'Pop') +
+    sp('⚡', `${res.flux ?? res.focus ?? 0}/14`, 'Flux') +
+    sp('🃏', game.landDeck ? game.landDeck.length : '?', 'Deck');
 
   // Board — show first 10 cells in a 5×2 grid
   const boardWrap = el('div', 'board-container');
