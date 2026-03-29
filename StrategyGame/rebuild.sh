@@ -3,6 +3,18 @@ set -e
 
 cd "$(dirname "$0")"
 
+echo "==> Generating changelog.json..."
+git log --format='%h	%s	%ad' --date=short -40 | python3 -c "
+import sys, json
+entries = []
+for line in sys.stdin:
+    parts = line.rstrip('\n').split('\t', 2)
+    if len(parts) == 3:
+        entries.append({'hash': parts[0], 'message': parts[1], 'date': parts[2]})
+print(json.dumps(entries, indent=2))
+" > StrategyGame.WebViewer/changelog.json
+echo "    Written $(python3 -c "import json; print(len(json.load(open('StrategyGame.WebViewer/changelog.json'))))" ) entries."
+
 echo "==> Building..."
 dotnet build -c Release
 

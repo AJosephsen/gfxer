@@ -118,18 +118,22 @@ app.MapGet("/assets/cards/{filename}", (string filename) =>
     return Results.File(path, "image/webp");
 });
 
-// Version info
-app.MapGet("/api/version", () => Results.Json(new
+// Version info — changelog built at deploy time by rebuild.sh
+var changelogPath = Path.Combine(AppContext.BaseDirectory, "changelog.json");
+var changelogJson = File.Exists(changelogPath) ? File.ReadAllText(changelogPath) : "[]";
+
+app.MapGet("/api/version", () =>
 {
-    name = "Ironhold — Wars of the Realm",
-    version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "1.0.0",
-    framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
-    informationalVersion = System.Reflection.Assembly
-        .GetEntryAssembly()
-        ?.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
-        .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
-        .FirstOrDefault()?.InformationalVersion ?? "n/a"
-}));
+    return Results.Content($$"""
+    {
+      "name": "Ironhold \u2014 Wars of the Realm",
+      "version": "{{System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "1.0.0"}}",
+      "framework": "{{System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}}",
+      "informationalVersion": "{{(System.Reflection.Assembly.GetEntryAssembly()?.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false).OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "n/a")}}",
+      "changelog": {{changelogJson}}
+    }
+    """, "application/json");
+});
 
 // Serve the viewer HTML
 app.MapGet("/", () => Results.Content(ViewerHtml.Content, "text/html"));
@@ -369,6 +373,18 @@ static class ViewerHtml
   .info-chronicle-name { color: var(--gold); font-size: 10px; letter-spacing: 1px; }
   .info-chronicle-id  { color: var(--gold-dark); font-size: 8px; margin-top: 1px; }
   .info-chronicle-meta { color: var(--gold-dim); font-size: 8px; letter-spacing: 0.5px; text-align: right; }
+  .info-changelog-row {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(74,58,24,0.4);
+    font-size: 9px;
+  }
+  .info-changelog-row:last-child { border-bottom: none; }
+  .info-cl-hash { color: var(--gold-dark); font-variant-numeric: tabular-nums; min-width: 52px; }
+  .info-cl-date { color: var(--gold-dark); min-width: 72px; }
+  .info-cl-msg  { color: var(--gold-dim); flex: 1; }
 
   /* ── Stats bar ── */
   #stats-bar {
@@ -854,6 +870,15 @@ async function refreshInfoPopup() {
     html += kv('Build', ver.informationalVersion ? ver.informationalVersion.split('+')[1]?.slice(0,8) ?? ver.version : ver.version);
     html += kv('Runtime', ver.framework);
     html += `<div class="info-section-gap"></div>`;
+
+    if (ver.changelog && ver.changelog.length > 0) {
+      html += `<div class="info-section-title">Changelog (last ${ver.changelog.length})</div>`;
+      for (const c of ver.changelog) {
+        const msg = c.message.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        html += `<div class="info-changelog-row"><span class="info-cl-hash">${c.hash}</span><span class="info-cl-date">${c.date}</span><span class="info-cl-msg">${msg}</span></div>`;
+      }
+      html += `<div class="info-section-gap"></div>`;
+    }
 
     html += `<div class="info-section-title">Chronicles (${games.length})</div>`;
     if (games.length === 0) {

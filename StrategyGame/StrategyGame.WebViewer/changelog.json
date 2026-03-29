@@ -1,0 +1,187 @@
+[
+  {
+    "hash": "4b041d5",
+    "message": "test: replace hard-coded v0.1.0 check with semver >= baseline assertion",
+    "date": "2026-03-29"
+  },
+  {
+    "hash": "8c440cd",
+    "message": "feat: info popup overlay in emblem with version and chronicles history",
+    "date": "2026-03-29"
+  },
+  {
+    "hash": "92b2c63",
+    "message": "feat: show occupied workers in pop stat, remove free slots display, fix flux fallback",
+    "date": "2026-03-29"
+  },
+  {
+    "hash": "137d3ac",
+    "message": "feat: rename Focus to Flux, collapsible emblem, stats bar, remove brittle version test",
+    "date": "2026-03-29"
+  },
+  {
+    "hash": "f132dc6",
+    "message": "docs: update CardArt README for current pipeline (no baked text, WebP export, all prompts)",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "a9cb98e",
+    "message": "feat: rename game to Ironhold \u2014 Wars of the Realm",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "217013c",
+    "message": "feat: card art pipeline, game assets, and fantasy-themed web viewer",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "118f640",
+    "message": "docs: add CardArt generation guide",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "54d2e08",
+    "message": "feat: card frame template + compose pipeline",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "3e69186",
+    "message": "fix: name outputs as {promptname}-{datetime}-{version}",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "9d79944",
+    "message": "feat: add CardArt image generation script",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "7b640c8",
+    "message": "chore: gitignore api.token",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "8030eeb",
+    "message": "feat: add delete_game MCP command",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "fba862d",
+    "message": "fix: show population as X/maxCap format everywhere",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "ec0f6b6",
+    "message": "feat: settlement population capacity (10-40 rolled at creation, caps total People)",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "45fb655",
+    "message": "fix: remove duplicate People/Population display in WebViewer",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "ca34374",
+    "message": "feat: WebViewer shows population/occupation and worker assignments",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "38afc06",
+    "message": "feat: round-robin worker distribution with scaled production",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "2b941dc",
+    "message": "feat: worker occupation system \u2014 people are occupied not consumed",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "12196fc",
+    "message": "feat: add WebViewer \u2014 read-only live game viewer on port 5050",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "85d0c76",
+    "message": "feat: add Wasteland land card (30% of deck, unbuildable)",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "157a391",
+    "message": "feat: hand limit (7), discard pile, 500-card land deck with 15/round burn, locked board cells with adjacency expansion",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "d62617c",
+    "message": "feat: add per-card Fertility and AccessibilityCost rolled stats to LandCard",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "7fc1115",
+    "message": "feat: add Wood resource, Lumber Camp, Fishing Camp, Sheep Pasture buildings; Farm costs 10 Wood to place",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "322b10e",
+    "message": "fix: register IGameRepository in DI; add README and rebuild script",
+    "date": "2026-03-28"
+  },
+  {
+    "hash": "93bd140",
+    "message": "chore: add VS Code MCP server config for strategy-game",
+    "date": "2026-03-27"
+  },
+  {
+    "hash": "e796065",
+    "message": "test: assert known commit message appears in get_version history output",
+    "date": "2026-03-27"
+  },
+  {
+    "hash": "274f5b8",
+    "message": "feat: add get_version MCP tool with git tag, commit hash, dirty status, and recent commits",
+    "date": "2026-03-27"
+  },
+  {
+    "hash": "ca30b8b",
+    "message": "test: add unit and integration tests for GameService and MCP tools (48 tests)",
+    "date": "2026-03-27"
+  },
+  {
+    "hash": "f39b3fe",
+    "message": "feat: upgrade StrategyGame to .NET 10",
+    "date": "2026-03-27"
+  },
+  {
+    "hash": "fac35fa",
+    "message": "docs: add temporary workspace commit/push work instructions",
+    "date": "2026-03-27"
+  },
+  {
+    "hash": "2a403c7",
+    "message": "Merge pull request #1 from AJosephsen/claude/strategy-game-mcp-server-EpS5C",
+    "date": "2026-03-27"
+  },
+  {
+    "hash": "e8143b5",
+    "message": "feat: add Focus resource \u2014 the action currency for drawing and playing cards",
+    "date": "2026-03-27"
+  },
+  {
+    "hash": "5a2b525",
+    "message": "feat: add C# strategy board game with MCP server",
+    "date": "2026-03-26"
+  },
+  {
+    "hash": "648745b",
+    "message": "feat: go fully client-side with localStorage API key",
+    "date": "2026-03-22"
+  },
+  {
+    "hash": "7b8d2fa",
+    "message": "chore: add .gitignore to exclude node_modules",
+    "date": "2026-03-22"
+  },
+  {
+    "hash": "747d6c6",
+    "message": "feat: initial sprite editor with OpenAI image generation and mask editing",
+    "date": "2026-03-22"
+  }
+]
