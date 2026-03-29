@@ -1,10 +1,11 @@
 # CardArt — Visual Style Guide
 
-## Target Style: Retro 16-bit Pixel Art
+## Target Style: Hand-Drawn Ancient Map / Treasure Map
 
-All card art for **Ironhold: Wars of the Realm** uses a retro 16-bit pixel art style inspired by
-classic SNES/Mega Drive era RPG and strategy games. Clean, chunky pixels, limited palette per scene,
-and immediately readable terrain types — like a zoomed-in tile from a beloved retro game.
+All card art for **Ironhold: Wars of the Realm** is styled as a section of an ancient hand-drawn
+fantasy map — like a detail cut from an old parchment treasure map or medieval cartographic atlas.
+Ink and pencil linework, aged parchment tones, a handful of muted earthy colours, and classic map
+icons (hatched mountains, tree glyphs, dotted coastlines, compass roses, etc.).
 
 ---
 
@@ -12,13 +13,13 @@ and immediately readable terrain types — like a zoomed-in tile from a beloved 
 
 | Principle | Description |
 |-----------|-------------|
-| **Pixel art** | Visible square pixels, chunky and clean. No anti-aliasing blur. |
-| **16-bit era** | SNES / Mega Drive aesthetic — more detail than 8-bit but still clearly pixelated. |
-| **Limited palette** | Each scene uses a tight, harmonious colour palette of 8–16 colours max. |
-| **Iconic readability** | Terrain type is instantly obvious from the pixel art composition. |
-| **Isometric or side-on** | Slight isometric angle or classic side-scrolling perspective typical of retro RPGs. |
-| **Fantasy RPG mood** | Feels like a tile or scene from a classic fantasy strategy/RPG game. |
-| **No text, no border** | Clean art area only — UI is handled separately. |
+| **Hand-drawn linework** | Ink pen and pencil lines, slightly imperfect and organic. Hatching for shading. |
+| **Parchment base** | Background is aged parchment / old paper — cream, tan, sepia tones. |
+| **Very limited colour** | Only 2–4 muted earthy accent colours on top of the parchment base (faded greens, muted blues, soft ochres). |
+| **Cartographic icons** | Terrain represented by classic map glyphs: hatched hill bumps, stylised tree symbols, dotted coastlines, tiny building elevations. |
+| **Aged and worn** | Subtle paper texture, faded ink, occasional stain or crease to feel genuinely old. |
+| **Fantasy cartography** | Style of old fantasy atlas maps — Tolkien-esque or classic D&D map aesthetic. |
+| **No text, no border** | Clean art area — labels and borders are handled separately. |
 
 ---
 
@@ -27,47 +28,47 @@ and immediately readable terrain types — like a zoomed-in tile from a beloved 
 Every prompt is built from four parts:
 
 ```
-<scene description>, 16-bit pixel art style, SNES era retro RPG aesthetic,
-limited colour palette, chunky visible pixels, [PERSPECTIVE], fantasy strategy game tile,
-no text, no border.
+<terrain type> depicted as a section of an ancient hand-drawn fantasy map,
+ink and pencil linework on aged parchment, classic cartographic map icons,
+limited muted [COLOUR] accent, old treasure map aesthetic, no text, no border.
 ```
 
 ---
 
 ## Card-Type Colour Palette
 
-| Card Type       | Dominant Colour | Accent Colour  |
-|-----------------|-----------------|----------------|
-| Plains          | Bright grass green | Sky blue    |
-| Forest          | Dark pine green | Warm amber     |
-| Beach           | Sandy tan       | Ocean blue     |
-| Hill            | Olive green     | Stone grey     |
-| Wasteland       | Ash grey        | Burnt orange   |
-| Farm            | Golden yellow   | Earthy brown   |
-| Settlement      | Stone grey      | Warm terracotta|
-| Lumber Camp     | Pine green      | Wood brown     |
-| Fishing Camp    | Ocean blue      | Timber tan     |
-| Sheep Pasture   | Bright green    | White          |
-| Board Background| Deep navy blue  | Forest green   |
+| Card Type       | Parchment Base  | Accent Colour        |
+|-----------------|-----------------|----------------------|
+| Plains          | Warm cream      | Faded olive green    |
+| Forest          | Warm cream      | Muted forest green   |
+| Beach           | Warm cream      | Faded coastal blue   |
+| Hill            | Warm cream      | Sepia brown          |
+| Wasteland       | Aged tan        | Ash grey             |
+| Farm            | Warm cream      | Soft ochre yellow    |
+| Settlement      | Warm cream      | Faded terracotta     |
+| Lumber Camp     | Warm cream      | Muted forest green   |
+| Fishing Camp    | Warm cream      | Faded coastal blue   |
+| Sheep Pasture   | Warm cream      | Faded olive green    |
+| Board Background| Aged tan        | Sepia + muted green  |
 
 ---
 
 ## Composition Guidelines
 
-- **Slight isometric or top-down** — classic RPG map tile perspective.
-- **One dominant terrain feature** — single focal element fills most of the frame.
-- **Pixel grid is visible** — art should look like it belongs in a retro game cartridge.
-- **Dithering welcome** — subtle pixel dithering for shading and transitions between colour areas.
-- **No characters** — terrain tiles only, no figures.
+- **Top-down or slight isometric** — classic medieval map viewing angle.
+- **Terrain fills the frame** — the card IS a section of the map.
+- **Iconic glyphs dominate** — repeated tree symbols for forest, hatched bumps for hills, dotted lines for coastlines, tiny tower/house icons for settlements.
+- **Hatching for depth** — cross-hatching used to shade valleys, water, and shadows.
+- **Sparse colour washes** — thin watercolour-like tints over the ink work, not solid fills.
 
 ---
 
 ## Generation Prompt Template (copy + customise)
 
 ```
-<terrain feature>, 16-bit pixel art style, SNES era retro RPG aesthetic,
-limited [DOMINANT COLOUR] and [ACCENT COLOUR] palette, chunky visible pixels,
-isometric RPG tile perspective, fantasy strategy game, no text, no border.
+<terrain> shown as a detail from an ancient hand-drawn fantasy map, ink pen linework
+on aged parchment, classic cartographic [ICON TYPE] symbols, faded [ACCENT COLOUR] colour wash,
+hatched shading, old treasure map aesthetic, fantasy atlas style, no text, no border.
 ```
 
 ## Prompt Recipe
