@@ -21,9 +21,16 @@ public sealed class VersionToolsTests
     [Fact]
     public void BuildVersionString_ContainsVersionTag()
     {
-        // The repo has v0.1.0 tagged — version string should start with it (possibly with extra info)
+        // Should return a semver tag at or beyond v0.1.0
         var version = VersionTools.BuildVersionString();
-        Assert.StartsWith("v", version);
+        var match = System.Text.RegularExpressions.Regex.Match(version, @"v(\d+)\.(\d+)\.(\d+)");
+        Assert.True(match.Success, $"Version string '{version}' does not contain a semver tag");
+        var major = int.Parse(match.Groups[1].Value);
+        var minor = int.Parse(match.Groups[2].Value);
+        var patch = int.Parse(match.Groups[3].Value);
+        var actual   = major * 1_000_000 + minor * 1_000 + patch;
+        var baseline = 0 * 1_000_000 + 1 * 1_000 + 0; // v0.1.0
+        Assert.True(actual >= baseline, $"Version {version} is older than baseline v0.1.0");
     }
 
     // ── GetVersion (full tool output) ────────────────────────────────────────
