@@ -118,6 +118,19 @@ app.MapGet("/assets/cards/{filename}", (string filename) =>
     return Results.File(path, "image/webp");
 });
 
+// Version info
+app.MapGet("/api/version", () => Results.Json(new
+{
+    name = "Ironhold — Wars of the Realm",
+    version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "1.0.0",
+    framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
+    informationalVersion = System.Reflection.Assembly
+        .GetEntryAssembly()
+        ?.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+        .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+        .FirstOrDefault()?.InformationalVersion ?? "n/a"
+}));
+
 // Serve the viewer HTML
 app.MapGet("/", () => Results.Content(ViewerHtml.Content, "text/html"));
 
@@ -259,6 +272,103 @@ static class ViewerHtml
   }
   .emblem-close:hover { color: var(--gold-dim); }
   .emblem-status.live { color: #6dbf7e; }
+  .emblem-info {
+    display: block;
+    color: var(--gold-dark);
+    font-size: 8px;
+    letter-spacing: 1px;
+    margin-top: 6px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .emblem-info:hover { color: var(--gold-dim); }
+
+  /* ── Info popup overlay ── */
+  .info-popup {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.72);
+    backdrop-filter: blur(3px);
+  }
+  .info-popup.hidden { display: none; }
+  .info-popup-panel {
+    background: linear-gradient(170deg, rgba(14,10,4,0.99) 0%, rgba(24,18,7,0.99) 100%);
+    border: 1px solid var(--gold-dim);
+    box-shadow:
+      0 0 0 3px rgba(0,0,0,0.65),
+      0 0 0 4px var(--gold-dark),
+      0 12px 60px rgba(0,0,0,0.95);
+    border-radius: 6px;
+    padding: 24px 28px;
+    width: min(500px, 92vw);
+    max-height: 80vh;
+    overflow-y: auto;
+    font-family: 'Cinzel', serif;
+  }
+  .info-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .info-popup-title {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--gold-bright);
+    font-size: 15px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 14px rgba(232,201,106,0.4);
+  }
+  .info-popup-close {
+    background: none;
+    border: 1px solid var(--gold-dark);
+    color: var(--gold-dim);
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+  .info-popup-close:hover { color: var(--gold-bright); border-color: var(--gold-dim); }
+  .info-section-title {
+    color: var(--gold);
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--gold-dark);
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+  }
+  .info-section-gap { margin-bottom: 18px; }
+  .info-kv {
+    color: var(--gold-dim);
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+    display: flex;
+    gap: 6px;
+  }
+  .info-kv .ik { min-width: 72px; text-transform: uppercase; letter-spacing: 1px; }
+  .info-kv .iv { color: var(--gold); }
+  .info-chronicle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 10px;
+    margin-bottom: 5px;
+    border: 1px solid var(--gold-dark);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .info-chronicle-row:hover { border-color: var(--gold-dim); background: rgba(200,168,75,0.05); }
+  .info-chronicle-row.active { border-color: var(--gold); background: rgba(200,168,75,0.08); }
+  .info-chronicle-name { color: var(--gold); font-size: 10px; letter-spacing: 1px; }
+  .info-chronicle-id  { color: var(--gold-dark); font-size: 8px; margin-top: 1px; }
+  .info-chronicle-meta { color: var(--gold-dim); font-size: 8px; letter-spacing: 0.5px; text-align: right; }
 
   /* ── Stats bar ── */
   #stats-bar {
@@ -457,7 +567,18 @@ static class ViewerHtml
     <hr class="emblem-rule">
     <select id="gamePicker"><option value="">Choose a chronicle…</option></select>
     <div id="status" class="emblem-status">Connecting…</div>
+    <span class="emblem-info" id="emblem-info">📜 Chronicles</span>
     <span class="emblem-close" id="emblem-close">▲ close</span>
+  </div>
+</div>
+
+<div id="info-popup" class="info-popup hidden">
+  <div class="info-popup-panel">
+    <div class="info-popup-header">
+      <span class="info-popup-title">⚔ Chronicles</span>
+      <button class="info-popup-close" id="info-popup-close">✕ close</button>
+    </div>
+    <div id="info-popup-body"><div style="color:var(--gold-dim);font-size:10px;text-align:center;padding:20px">Loading…</div></div>
   </div>
 </div>
 
@@ -699,6 +820,77 @@ emblemEl.addEventListener('click', () => {
     emblemEl.title = '';
   }
 });
+
+// Info popup
+const infoPopupEl = document.getElementById('info-popup');
+document.getElementById('emblem-info').addEventListener('click', e => {
+  e.stopPropagation();
+  openInfoPopup();
+});
+document.getElementById('info-popup-close').addEventListener('click', () => closeInfoPopup());
+infoPopupEl.addEventListener('click', e => { if (e.target === infoPopupEl) closeInfoPopup(); });
+
+function openInfoPopup() {
+  infoPopupEl.classList.remove('hidden');
+  refreshInfoPopup();
+}
+function closeInfoPopup() {
+  infoPopupEl.classList.add('hidden');
+}
+
+async function refreshInfoPopup() {
+  const body = document.getElementById('info-popup-body');
+  try {
+    const [verRes, gamesRes] = await Promise.all([
+      fetch(`${API}/api/version`),
+      fetch(`${API}/api/games`)
+    ]);
+    const ver = await verRes.json();
+    const games = await gamesRes.json();
+
+    let html = `<div class="info-section-title">Version</div>`;
+    html += kv('Game', ver.name);
+    html += kv('Version', ver.version);
+    html += kv('Build', ver.informationalVersion ? ver.informationalVersion.split('+')[1]?.slice(0,8) ?? ver.version : ver.version);
+    html += kv('Runtime', ver.framework);
+    html += `<div class="info-section-gap"></div>`;
+
+    html += `<div class="info-section-title">Chronicles (${games.length})</div>`;
+    if (games.length === 0) {
+      html += `<div class="info-kv" style="justify-content:center;padding:12px">No saved chronicles found</div>`;
+    } else {
+      for (const g of games) {
+        const isActive = g.gameId === currentGameId;
+        const created = g.lastPlayedAt ? new Date(g.lastPlayedAt).toLocaleString() : '—';
+        html += `
+          <div class="info-chronicle-row${isActive ? ' active' : ''}" onclick="selectFromInfo('${g.gameId}')">
+            <div>
+              <div class="info-chronicle-name">${g.playerName}</div>
+              <div class="info-chronicle-id">${g.gameId}</div>
+            </div>
+            <div class="info-chronicle-meta">
+              <div>Round ${g.round}</div>
+              <div>${created}</div>
+            </div>
+          </div>`;
+      }
+    }
+
+    body.innerHTML = html;
+  } catch (err) {
+    body.innerHTML = `<div class="info-kv" style="color:#c44;text-align:center;padding:16px">Failed to load: ${err.message}</div>`;
+  }
+}
+
+function kv(label, value) {
+  return `<div class="info-kv"><span class="ik">${label}</span><span class="iv">${value ?? '—'}</span></div>`;
+}
+
+function selectFromInfo(gameId) {
+  document.getElementById('gamePicker').value = gameId;
+  selectGame(gameId);
+  closeInfoPopup();
+}
 
 // Init
 document.getElementById('gamePicker').addEventListener('change', e => selectGame(e.target.value));

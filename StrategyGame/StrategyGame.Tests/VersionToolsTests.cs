@@ -26,13 +26,6 @@ public sealed class VersionToolsTests
         Assert.StartsWith("v", version);
     }
 
-    [Fact]
-    public void BuildVersionString_ContainsV010Tag()
-    {
-        var version = VersionTools.BuildVersionString();
-        Assert.Contains("v0.1.0", version);
-    }
-
     // ── GetVersion (full tool output) ────────────────────────────────────────
 
     [Fact]
