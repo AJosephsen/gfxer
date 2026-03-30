@@ -466,7 +466,7 @@ static class ViewerHtml
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.35);
+    background: rgba(0,0,0,0.08);
     border-radius: inherit;
   }
   /* keep text above the tint overlay */
