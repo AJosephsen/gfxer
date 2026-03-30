@@ -9,28 +9,31 @@ public static class RoundTools
 {
     [McpServerTool(Name = "play_card")]
     [Description("Play a card from hand onto the board. " +
-                 "Land cards are placed on empty cells. " +
-                 "Building cards are placed on cells that already have a land card. " +
+                 "Land cards are placed on the next open slot automatically. " +
+                 "Building cards are attached to the next compatible land slot automatically. " +
                  "Use get_hand to find the card's instance ID.")]
     public static string PlayCard(
         GameService gameService,
         [Description("The game ID.")]
         string gameId,
         [Description("The instance ID of the card in your hand (from get_hand, e.g. 'a3f2b1c0').")]
-        string cardInstanceId,
-        [Description("Target row on the board (0 to 3, top to bottom).")]
-        int row,
-        [Description("Target column on the board (0 to 4, left to right).")]
-        int col)
+        string cardInstanceId)
     {
-        var (game, message) = gameService.PlayCard(gameId, cardInstanceId, row, col);
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine(message);
-        sb.AppendLine();
-        sb.AppendLine(gameService.RenderBoard(game));
-        sb.AppendLine();
-        sb.AppendLine(gameService.RenderHand(game));
-        return sb.ToString().TrimEnd();
+        try
+        {
+            var (game, message) = gameService.PlayCard(gameId, cardInstanceId);
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine(message);
+            sb.AppendLine();
+            sb.AppendLine(gameService.RenderBoard(game));
+            sb.AppendLine();
+            sb.AppendLine(gameService.RenderHand(game));
+            return sb.ToString().TrimEnd();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return $"Cannot play card: {ex.Message}";
+        }
     }
 
     [McpServerTool(Name = "end_round")]

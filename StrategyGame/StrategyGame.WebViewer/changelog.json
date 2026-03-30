@@ -1,5 +1,60 @@
 [
   {
+    "hash": "3c6299c",
+    "message": "fix: reduce board cell dark overlay from 0.35 to 0.08 \u2014 tiles now match hand card brightness",
+    "date": "2026-03-30"
+  },
+  {
+    "hash": "e1d1e59",
+    "message": "feat: restyle forest \u2014 fewer large iconic ink trees, organic spacing, light green wash",
+    "date": "2026-03-30"
+  },
+  {
+    "hash": "554647e",
+    "message": "feat: restyle forest \u2014 ink-drawn cartographic tree glyphs with light green watercolor wash",
+    "date": "2026-03-30"
+  },
+  {
+    "hash": "8f467f0",
+    "message": "feat: restyle hill (larger uneven green hills) and sheep pasture (large sheep, white wool, green hills)",
+    "date": "2026-03-30"
+  },
+  {
+    "hash": "83002c9",
+    "message": "feat: update all card art to new 20260329 graphic style",
+    "date": "2026-03-29"
+  },
+  {
+    "hash": "6612baa",
+    "message": "feat: switch to ancient hand-drawn map style, update all prompts and style guide",
+    "date": "2026-03-29"
+  },
+  {
+    "hash": "dc0d852",
+    "message": "feat: switch to 16-bit retro pixel art style, update all prompts and style guide",
+    "date": "2026-03-29"
+  },
+  {
+    "hash": "4e6303c",
+    "message": "feat: restyle to bold symbolic fantasy illustration, update all prompts",
+    "date": "2026-03-29"
+  },
+  {
+    "hash": "2946970",
+    "message": "fix: simplify beach prompt to calm coastal scene",
+    "date": "2026-03-29"
+  },
+  {
+    "hash": "a62ff63",
+    "message": "feat: add flat storybook style guide and regenerate all card art prompts",
+    "date": "2026-03-29"
+  },
+  {
+    "hash": "ff1a8cc",
+    "message": "feat: build-time version.txt from git describe, same format as MCP version tool",
+    "date": "2026-03-29"
+  },
+  {
     "hash": "cbae041",
     "message": "feat: build-time changelog.json from git, no runtime git access in WebViewer",
     "date": "2026-03-29"
@@ -143,50 +198,5 @@
     "hash": "274f5b8",
     "message": "feat: add get_version MCP tool with git tag, commit hash, dirty status, and recent commits",
     "date": "2026-03-27"
-  },
-  {
-    "hash": "ca30b8b",
-    "message": "test: add unit and integration tests for GameService and MCP tools (48 tests)",
-    "date": "2026-03-27"
-  },
-  {
-    "hash": "f39b3fe",
-    "message": "feat: upgrade StrategyGame to .NET 10",
-    "date": "2026-03-27"
-  },
-  {
-    "hash": "fac35fa",
-    "message": "docs: add temporary workspace commit/push work instructions",
-    "date": "2026-03-27"
-  },
-  {
-    "hash": "2a403c7",
-    "message": "Merge pull request #1 from AJosephsen/claude/strategy-game-mcp-server-EpS5C",
-    "date": "2026-03-27"
-  },
-  {
-    "hash": "e8143b5",
-    "message": "feat: add Focus resource \u2014 the action currency for drawing and playing cards",
-    "date": "2026-03-27"
-  },
-  {
-    "hash": "5a2b525",
-    "message": "feat: add C# strategy board game with MCP server",
-    "date": "2026-03-26"
-  },
-  {
-    "hash": "648745b",
-    "message": "feat: go fully client-side with localStorage API key",
-    "date": "2026-03-22"
-  },
-  {
-    "hash": "7b8d2fa",
-    "message": "chore: add .gitignore to exclude node_modules",
-    "date": "2026-03-22"
-  },
-  {
-    "hash": "747d6c6",
-    "message": "feat: initial sprite editor with OpenAI image generation and mask editing",
-    "date": "2026-03-22"
   }
 ]

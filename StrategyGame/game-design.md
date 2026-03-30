@@ -50,6 +50,22 @@ Buildings that can't pay upkeep become disabled (`!`) until you can afford them 
 
 <!-- Add your ideas below -->
 
+### Card icons
+
+Replace text labels (resource costs, terrain type, building type) with small AI-generated PNG icons — same pipeline as card/land art. One icon per concept, rendered at ~32px, composited onto the card layout.
+
+### Aggregated board view
+
+Instead of one slot per cell, group board cells by land type and show a single aggregate card per group (summed production, averaged fertility etc.). For land types that can hold buildings, split into two stacks: empty cells and cells with buildings. Fewer cards, more signal.
+
+### Core concept: strategy board game as a card game
+
+Classic grand-strategy abstracted into cards. Multiple players, each managing a territory. The central tension: armies consume resources (food, people) that would otherwise fuel production — going unarmed lets you grow fast but leaves you exposed; a large army lets you seize other players' land and snowball that way. Conquest is an alternative growth path to economic development.
+
+### Diplomacy and alliances
+
+Players can form alliances — pooling armies for joint attacks or shared defence. Alliances shift the calculus: a small military player stays viable by sheltering under a stronger ally; a dominant player can be checked by a defensive coalition. Betrayal and alliance-breaking should carry costs.
+
 ### Worker occupation system
 
 Replace the current flat People upkeep with a proper worker-allocation model:

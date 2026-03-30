@@ -228,6 +228,20 @@ public sealed class GameServiceTests
     }
 
     [Fact]
+    public void PlayCard_AutoPlacement_PlacesLandInFirstAvailableSlot()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        var landCard = game.Hand.OfType<LandCard>().First();
+
+        var (updated, message) = svc.PlayCard(game.GameId, landCard.InstanceId);
+
+        Assert.NotNull(updated.Board.GetCell(0, 0).Land);
+        Assert.Equal(landCard.DefinitionId, updated.Board.GetCell(0, 0).Land!.DefinitionId);
+        Assert.Contains("slot 1", message);
+    }
+
+    [Fact]
     public void PlayCard_LandCard_RemovesFromHand()
     {
         var svc = CreateService();
@@ -310,6 +324,32 @@ public sealed class GameServiceTests
         var (afterBuilding, _) = svc.PlayCard(game.GameId, settlement.InstanceId, 0, 0);
         Assert.NotNull(afterBuilding.Board.GetCell(0, 0).Building);
         Assert.Equal("building_settlement", afterBuilding.Board.GetCell(0, 0).Building!.DefinitionId);
+    }
+
+    [Fact]
+    public void PlayCard_AutoPlacement_BuildingUsesNextCompatibleLandSlot()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        game.Resources = game.Resources with { Wood = 10 };
+
+        var plains = new LandCard { DefinitionId = "land_plains" };
+        var beach = new LandCard { DefinitionId = "land_beach" };
+        var camp = new BuildingCard { DefinitionId = "building_fishing_camp" };
+        game.Hand.Add(plains);
+        game.Hand.Add(beach);
+        game.Hand.Add(camp);
+        repo.Save(game);
+
+        svc.PlayCard(game.GameId, plains.InstanceId);
+        svc.PlayCard(game.GameId, beach.InstanceId);
+        var (updated, message) = svc.PlayCard(game.GameId, camp.InstanceId);
+
+        Assert.Null(updated.Board.GetCell(0, 0).Building);
+        Assert.NotNull(updated.Board.GetCell(0, 1).Building);
+        Assert.Equal("building_fishing_camp", updated.Board.GetCell(0, 1).Building!.DefinitionId);
+        Assert.Contains("slot 2", message);
     }
 
     [Fact]

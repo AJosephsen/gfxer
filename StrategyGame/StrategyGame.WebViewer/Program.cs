@@ -432,19 +432,35 @@ static class ViewerHtml
 
 
 
+  .board-section {
+    max-width: 1120px;
+    margin: 0 auto 24px;
+  }
+  .board-section h2 {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--gold-bright);
+    font-size: 16px;
+    margin-bottom: 10px;
+    text-align: center;
+    letter-spacing: 2px;
+    text-shadow: 0 0 12px rgba(232,201,106,0.3);
+  }
   .board-container {
     display: flex;
     justify-content: center;
     margin-bottom: 24px;
   }
   .board {
-    display: grid;
-    gap: 4px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   .cell {
-    width: 180px;
-    height: 144px;
+    width: 196px;
+    height: 156px;
     border-radius: 8px;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -456,17 +472,35 @@ static class ViewerHtml
   }
   .cell.locked { background: rgba(0,0,0,0.6); border: 1px dashed var(--gold-dark); color: var(--gold-dark); }
   .cell.empty { background: rgba(13,15,26,0.5); border: 1px solid var(--panel-border); color: var(--gold-dim); }
+  .cell.placeholder {
+    background: rgba(13,15,26,0.22);
+    border: 1px dashed var(--panel-border);
+    box-shadow: inset 0 0 0 1px rgba(232,201,106,0.06);
+  }
+  .cell.placeholder .placeholder-label {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--gold-dark);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
   /* terrain cells — art background set via JS; tint overlay for readability */
   .cell.has-art {
-    border: 1px solid var(--panel-border);
-    background-size: cover;
+    border: 2px solid rgba(200, 168, 75, 0.62);
+    background-color: rgba(228, 197, 126, 0.12);
+    background-blend-mode: screen;
+    background-size: 112% auto;
     background-position: center;
+    background-repeat: no-repeat;
+    box-shadow:
+      inset 0 0 0 1px rgba(232,201,106,0.18),
+      0 0 0 1px rgba(38,28,9,0.82);
   }
   .cell.has-art::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.08);
+    background: linear-gradient(to bottom, rgba(8,6,2,0.06) 0%, rgba(8,6,2,0.18) 100%);
     border-radius: inherit;
   }
   /* keep text above the tint overlay */
@@ -475,18 +509,78 @@ static class ViewerHtml
   .cell .building-name {
     font-family: 'Cinzel', serif;
     font-size: 10px;
-    font-weight: 700;
-    background: rgba(10,8,4,0.7);
-    color: var(--parchment);
-    border: 1px solid var(--gold-dark);
-    padding: 2px 8px;
-    border-radius: 3px;
-    margin-top: 4px;
-    letter-spacing: 0.5px;
+    font-weight: 600;
+    color: var(--gold-bright);
+    text-shadow: 0 1px 4px #000, 0 0 8px rgba(0,0,0,0.8);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
   }
-  .cell .building-name.disabled { color: #c0392b; text-decoration: line-through; }
+  .cell .building-name.disabled { color: #d98b75; text-decoration: line-through; }
   .cell .fertility { font-family: 'Cinzel', serif; font-size: 9px; color: var(--gold); opacity: 0.85; position: absolute; top: 5px; right: 6px; text-shadow: 0 1px 3px #000; }
   .cell .workers { font-family: 'Cinzel', serif; font-size: 9px; color: var(--parchment); opacity: 0.9; position: absolute; bottom: 5px; right: 6px; text-shadow: 0 1px 3px #000; }
+  .cell .stack-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10,8,4,0.9);
+    border-bottom: 1px solid rgba(200,168,75,0.6);
+    z-index: 2;
+  }
+  .cell .stack-title {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    text-shadow: 0 1px 4px #000, 0 0 8px rgba(0,0,0,0.8);
+    text-align: center;
+    max-width: 74%;
+  }
+  .cell .stack-badge {
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    font-family: 'Cinzel', serif;
+    font-size: 7px;
+    color: var(--parchment);
+    background: rgba(10,8,4,0.78);
+    border: 1px solid var(--gold-dark);
+    border-radius: 3px;
+    padding: 1px 5px;
+    letter-spacing: 0.5px;
+    z-index: 3;
+  }
+  .cell .stack-footer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    min-height: 38px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    padding: 5px 8px 6px;
+    background: rgba(10,8,4,0.9);
+    border-top: 1px solid rgba(200,168,75,0.6);
+    z-index: 2;
+  }
+  .cell .stack-stats {
+    position: static;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    color: var(--gold-bright);
+    text-shadow: 0 1px 3px #000;
+    line-height: 1.35;
+    text-align: center;
+  }
 
   .hand-section {
     max-width: 800px;
@@ -503,15 +597,15 @@ static class ViewerHtml
   }
   .hand {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
     justify-content: center;
   }
   /* ── Art-backed card ───────────────────────────────── */
   .card {
     position: relative;
-    width: 160px;
-    height: 240px;
+    width: 184px;
+    height: 276px;
     border-radius: 4px;
     overflow: hidden;
     background-size: cover;
@@ -529,7 +623,7 @@ static class ViewerHtml
     align-items: center;
     justify-content: center;
     font-family: 'Cinzel', serif;
-    font-size: 8px;
+    font-size: 10px;
     font-weight: 700;
     color: var(--gold-bright);
     text-shadow: 0 1px 3px #000, 0 0 6px #000;
@@ -540,11 +634,11 @@ static class ViewerHtml
   /* Stats panel overlay — sits in the frame's bottom stats area */
   .card .card-stats {
     position: absolute;
-    top: 178px;
+    top: 210px;
     left: 8px;
     right: 8px;
     bottom: 6px;
-    font-size: 8px;
+    font-size: 11px;
     color: #c8b996;
     text-shadow: 0 1px 2px #000;
     line-height: 1.5;
@@ -555,8 +649,8 @@ static class ViewerHtml
     display: flex;
     justify-content: space-between;
   }
-  .card .card-stats .stat-label { font-family: 'Cinzel', serif; color: var(--gold-dim); font-size: 7px; letter-spacing: 0.5px; }
-  .card .card-stats .stat-value { font-family: 'Cinzel', serif; color: var(--gold-bright); font-size: 7px; }
+  .card .card-stats .stat-label { font-family: 'Cinzel', serif; color: var(--gold-bright); font-size: 10px; letter-spacing: 0.5px; }
+  .card .card-stats .stat-value { font-family: 'Cinzel', serif; color: var(--gold-bright); font-size: 10px; }
 
   .discard-info {
     text-align: center;
@@ -696,60 +790,104 @@ function render(game) {
     sp('⚡', `${res.flux ?? res.focus ?? 0}/14`, 'Flux') +
     sp('🃏', game.landDeck ? game.landDeck.length : '?', 'Deck');
 
-  // Board — show first 10 cells in a 5×2 grid
+  // Board — aggregate by land type into unified terrain stacks
+  const boardSection = el('div', 'board-section');
   const boardWrap = el('div', 'board-container');
   const board = el('div', 'board');
   const cells = game.board.cells;
-  const COLS = 5, ROWS = 2;
-  board.style.gridTemplateColumns = `repeat(${COLS}, 180px)`;
-  board.style.gridTemplateRows    = `repeat(${ROWS}, 144px)`;
+  const placedCells = cells
+    .filter(c => c.land)
+    .sort((a, b) => (a.row * 100 + a.col) - (b.row * 100 + b.col));
 
-  // Take only the first COLS*ROWS cells (top-left of the grid)
-  const visibleCells = cells
-    .filter(c => c.row < ROWS && c.col < COLS)
-    .slice(0, COLS * ROWS);
+  const stackMap = new Map();
+  for (const cell of placedCells) {
+    const landDef = catalog[cell.land.definitionId];
+    const terrain = landDef && landDef.terrain ? landDef.terrain : 'Unknown';
+    const stackKey = `${cell.land.definitionId}`;
 
-  for (const cell of visibleCells) {
-    const div = el('div', 'cell');
-    if (cell.isLocked) {
-      div.classList.add('locked');
-      div.innerHTML = '🔒';
-    } else if (!cell.land) {
-      div.classList.add('empty');
-      div.innerHTML = '···';
-    } else {
-      const landDef = catalog[cell.land.definitionId];
-      div.classList.add('has-art');
-      div.style.backgroundImage = `url(/assets/lands/${cell.land.definitionId}.webp)`;
-      let html = `<span class="terrain-name">${landDef ? landDef.name : cell.land.definitionId}</span>`;
-      // Fertility
-      if (cell.land.fertility) {
-        html += `<span class="fertility">×${(cell.land.fertility / 10).toFixed(1)}</span>`;
-      }
-      // Building: switch background to building art
-      if (cell.building) {
-        div.style.backgroundImage = `url(/assets/lands/${cell.building.definitionId}.webp)`;
-        const bDef = catalog[cell.building.definitionId];
-        const bName = bDef ? bDef.name : cell.building.definitionId;
-        const cls = cell.building.isActive ? '' : ' disabled';
-        html += `<span class="building-name${cls}">${bName}</span>`;
-        // Show worker assignment
-        if (bDef && bDef.occupies > 0) {
-          const assigned = cell.building.assignedWorkers || 0;
-          html += `<span class="workers">${assigned}/${bDef.occupies} 👷</span>`;
-        }
-        if (cell.building.populationCapacity > 0) {
-          html += `<span class="workers">Cap: ${cell.building.populationCapacity} 🏘️</span>`;
-        }
-      }
-      div.innerHTML = html;
+    if (!stackMap.has(stackKey)) {
+      stackMap.set(stackKey, {
+        landId: cell.land.definitionId,
+        landName: landDef ? landDef.name : cell.land.definitionId,
+        terrain,
+        cells: [],
+      });
     }
-    div.style.gridRow = cell.row + 1;
-    div.style.gridColumn = cell.col + 1;
+    stackMap.get(stackKey).cells.push(cell);
+  }
+
+  const stacks = Array.from(stackMap.values())
+    .sort((a, b) => a.landName.localeCompare(b.landName));
+
+  boardSection.innerHTML = `<h2>Board Stacks (${stacks.length})</h2>`;
+
+  for (const stack of stacks) {
+    const div = el('div', 'cell');
+    const stackCells = stack.cells;
+    div.classList.add('has-art');
+    div.style.backgroundImage = `url(/assets/lands/${stack.landId}.webp)`;
+
+    const topBuildingCell = stackCells
+      .filter(c => c.building)
+      .sort((a, b) => (b.land.fertility || 0) - (a.land.fertility || 0))[0];
+    if (topBuildingCell) {
+      div.style.backgroundImage = `url(/assets/lands/${topBuildingCell.building.definitionId}.webp)`;
+    }
+
+    const stackCount = stackCells.length;
+    const avgFertility = stackCells.reduce((sum, c) => sum + (c.land.fertility || 0), 0) / Math.max(stackCount, 1);
+    const buildingCount = stackCells.filter(c => c.building).length;
+    const estimatedProduction = stackCells.reduce((sum, c) => {
+      if (!c.building) return sum;
+      const bDef = catalog[c.building.definitionId];
+      if (!bDef) return sum;
+      const occupies = bDef.occupies || 0;
+      const assigned = c.building.assignedWorkers || 0;
+      const ratio = occupies > 0 ? Math.min(1, assigned / occupies) : 1;
+      return {
+        food: sum.food + Math.round((bDef.production?.food || 0) * ratio),
+        wood: sum.wood + Math.round((bDef.production?.wood || 0) * ratio),
+        people: sum.people + Math.round((bDef.production?.people || 0) * ratio),
+      };
+    }, { food: 0, wood: 0, people: 0 });
+
+    const badge = `Cells ${buildingCount}/${stackCount}`;
+
+    let statParts = [`avg fert ×${(avgFertility / 10).toFixed(1)}`];
+    if (buildingCount > 0) statParts.push(`buildings ${buildingCount}`);
+    const prodParts = [];
+    if (estimatedProduction.food > 0) prodParts.push(`+${estimatedProduction.food}🌾`);
+    if (estimatedProduction.wood > 0) prodParts.push(`+${estimatedProduction.wood}🪵`);
+    if (estimatedProduction.people > 0) prodParts.push(`+${estimatedProduction.people}👥`);
+    if (prodParts.length > 0) statParts.push(`prod ${prodParts.join(' ')}`);
+
+    const displayTitle = stack.landName;
+
+    let html = `<div class="stack-header"><span class="stack-badge">${badge}</span><span class="stack-title">${displayTitle}</span></div>`;
+    html += `<div class="stack-footer">`;
+
+    if (topBuildingCell) {
+      const topDef = catalog[topBuildingCell.building.definitionId];
+      const topName = topDef ? topDef.name : topBuildingCell.building.definitionId;
+      html += `<span class="building-name">${topName}</span>`;
+    }
+
+    html += `<span class="stack-stats">${statParts.join(' · ')}</span>`;
+    html += `</div>`;
+
+    div.innerHTML = html;
     board.appendChild(div);
   }
+
+  if (placedCells.length < cells.length) {
+    const placeholder = el('div', 'cell placeholder');
+    placeholder.innerHTML = `<span class="placeholder-label">Next Slot</span>`;
+    board.appendChild(placeholder);
+  }
+
   boardWrap.appendChild(board);
-  v.appendChild(boardWrap);
+  boardSection.appendChild(boardWrap);
+  v.appendChild(boardSection);
 
   // Hand
   const handSection = el('div', 'hand-section');

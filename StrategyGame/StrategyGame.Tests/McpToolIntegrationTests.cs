@@ -72,7 +72,7 @@ public sealed class McpToolIntegrationTests
         var game = svc.StartGame("Alice");
         var output = BoardTools.GetBoard(svc, game.GameId);
         Assert.Contains("Round", output);
-        Assert.Contains("Legend", output);
+        Assert.Contains("Board (", output);
     }
 
     [Fact]
@@ -137,20 +137,20 @@ public sealed class McpToolIntegrationTests
         var svc = CreateService();
         var game = svc.StartGame("Alice");
         var landCard = game.Hand.OfType<LandCard>().First();
-        var output = RoundTools.PlayCard(svc, game.GameId, landCard.InstanceId, 0, 0);
+        var output = RoundTools.PlayCard(svc, game.GameId, landCard.InstanceId);
         Assert.Contains("Placed", output);
         Assert.Contains("Round", output); // board is rendered
         Assert.Contains("Hand", output);
     }
 
     [Fact]
-    public void PlayCard_InvalidCardId_ThrowsWithHelpfulMessage()
+    public void PlayCard_InvalidCardId_ReturnsHelpfulMessage()
     {
         var svc = CreateService();
         var game = svc.StartGame("Alice");
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            RoundTools.PlayCard(svc, game.GameId, "bad-id", 0, 0));
-        Assert.Contains("not found in hand", ex.Message);
+        var output = RoundTools.PlayCard(svc, game.GameId, "bad-id");
+        Assert.Contains("Cannot play card:", output);
+        Assert.Contains("not found in hand", output);
     }
 
     // ── end_round ────────────────────────────────────────────────────────────
@@ -185,17 +185,17 @@ public sealed class McpToolIntegrationTests
         var drawOutput = DeckTools.DrawCard(svc, gameId);
         Assert.Contains("Drew", drawOutput);
 
-        // 3. Play a land card on cell (1,1)
+        // 3. Play a land card on the next open slot
         var state = svc.LoadGame(gameId);
         var landCard = state.Hand.OfType<LandCard>().First();
-        var playLandOutput = RoundTools.PlayCard(svc, gameId, landCard.InstanceId, 1, 1);
+        var playLandOutput = RoundTools.PlayCard(svc, gameId, landCard.InstanceId);
         Assert.Contains("Placed", playLandOutput);
 
-        // 4. Play the settlement building on cell (1,1)
+        // 4. Play the settlement building on the matching land slot
         state = svc.LoadGame(gameId);
         var settlement = state.Hand.OfType<BuildingCard>()
             .First(c => c.DefinitionId == "building_settlement");
-        var playBuildingOutput = RoundTools.PlayCard(svc, gameId, settlement.InstanceId, 1, 1);
+        var playBuildingOutput = RoundTools.PlayCard(svc, gameId, settlement.InstanceId);
         Assert.Contains("Built", playBuildingOutput);
 
         // 5. End round — settlement should produce 2 People
@@ -206,8 +206,8 @@ public sealed class McpToolIntegrationTests
         // 6. Verify final state
         state = svc.LoadGame(gameId);
         Assert.Equal(2, state.Round);
-        Assert.NotNull(state.Board.GetCell(1, 1).Building);
-        Assert.True(state.Board.GetCell(1, 1).Building!.IsActive);
+        Assert.NotNull(state.Board.GetCell(0, 0).Building);
+        Assert.True(state.Board.GetCell(0, 0).Building!.IsActive);
         // People should be >= 5 + 2 production (settlers produce +2 people)
         Assert.True(state.Resources.People >= 7);
     }
@@ -219,13 +219,13 @@ public sealed class McpToolIntegrationTests
         var game = svc.StartGame("Carol");
         var gameId = game.GameId;
 
-        // Place land and settlement — use (1,1) which is in the starting unlocked zone
+        // Place land and settlement on the next available slot
         var landCard = game.Hand.OfType<LandCard>().First();
-        svc.PlayCard(gameId, landCard.InstanceId, 1, 1);
+        svc.PlayCard(gameId, landCard.InstanceId);
         var state = svc.LoadGame(gameId);
         var settlement = state.Hand.OfType<BuildingCard>()
             .First(c => c.DefinitionId == "building_settlement");
-        svc.PlayCard(gameId, settlement.InstanceId, 1, 1);
+        svc.PlayCard(gameId, settlement.InstanceId);
 
         // End 3 rounds
         for (int i = 0; i < 3; i++)

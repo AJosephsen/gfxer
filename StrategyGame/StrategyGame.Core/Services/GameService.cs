@@ -54,13 +54,47 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
     // ── Playing cards ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// Play a card from hand onto the board.
+    /// Play a card from hand onto the next valid board slot.
+    /// Land cards go on the next unlocked empty cell; buildings attach to the next compatible land cell without a building.
+    /// </summary>
+    public (GameState game, string message) PlayCard(string gameId, string cardInstanceId)
+    {
+        return PlayCardInternal(
+            gameId,
+            cardInstanceId,
+            (game, card, def) => card switch
+            {
+                LandCard => FindNextLandPlacementCell(game),
+                BuildingCard => FindNextBuildingPlacementCell(game, (BuildingDefinition)def),
+                _ => throw new InvalidOperationException("Unknown card type.")
+            },
+            cell => $"slot {GetSlotNumber(cell)}");
+    }
+
+    /// <summary>
+    /// Play a card from hand onto a specific board cell.
     /// Land cards go on empty cells; buildings go on cells that already have land.
     /// </summary>
     public (GameState game, string message) PlayCard(string gameId, string cardInstanceId, int row, int col)
     {
+        return PlayCardInternal(
+            gameId,
+            cardInstanceId,
+            (game, _, _) =>
+            {
+                ValidateBoardPosition(row, col);
+                return game.Board.GetCell(row, col);
+            },
+            cell => $"cell ({cell.Row},{cell.Col})");
+    }
+
+    private (GameState game, string message) PlayCardInternal(
+        string gameId,
+        string cardInstanceId,
+        Func<GameState, CardBase, CardDefinition, BoardCell> resolveCell,
+        Func<BoardCell, string> describeCell)
+    {
         var game = repo.Load(gameId);
-        ValidateBoardPosition(row, col);
 
         var idx = game.Hand.FindIndex(c => c.InstanceId == cardInstanceId);
         if (idx < 0)
@@ -69,13 +103,12 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
         var card = game.Hand[idx];
         var def = catalog.Get(card.DefinitionId);
-        var cell = game.Board.GetCell(row, col);
+        var cell = resolveCell(game, card, def);
 
         if (cell.IsLocked)
             throw new InvalidOperationException(
-                $"Cell ({row},{col}) is locked. Place a land card on an adjacent cell first to unlock it.");
+                $"{describeCell(cell)} is locked. Place a land card on an adjacent cell first to unlock it.");
 
-        // Flux cost — land cards scale by their AccessibilityCost multiplier
         int fluxAmount = card is LandCard lc0
             ? lc0.ComputeFluxCost(def.FluxCost)
             : def.FluxCost;
@@ -90,22 +123,22 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         {
             if (cell.Land != null)
                 throw new InvalidOperationException(
-                    $"Cell ({row},{col}) already has {catalog.Get(cell.Land.DefinitionId).Name} land. Choose an empty cell.");
+                    $"{describeCell(cell)} already has {catalog.Get(cell.Land.DefinitionId).Name} land. Choose an empty cell.");
 
             game.Resources = game.Resources.Subtract(fluxCost);
             cell.Land = landCard;
-            game.Board.UnlockAdjacent(row, col);
+            game.Board.UnlockAdjacent(cell.Row, cell.Col);
             game.Hand.RemoveAt(idx);
-            message = $"Placed {def.Name} land at ({row},{col}). Spent: {fluxAmount} Flux.";
+            message = $"Placed {def.Name} land on {describeCell(cell)}. Spent: {fluxAmount} Flux.";
         }
         else if (card is BuildingCard building)
         {
             if (cell.Land == null)
                 throw new InvalidOperationException(
-                    $"Cell ({row},{col}) has no land. Play a land card there first.");
+                    $"{describeCell(cell)} has no land. Play a land card there first.");
             if (cell.Building != null)
                 throw new InvalidOperationException(
-                    $"Cell ({row},{col}) already has a {catalog.Get(cell.Building.DefinitionId).Name}.");
+                    $"{describeCell(cell)} already has a {catalog.Get(cell.Building.DefinitionId).Name}.");
 
             var bDef = (BuildingDefinition)def;
             var landDef = (LandDefinition)catalog.Get(cell.Land.DefinitionId);
@@ -123,7 +156,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             game.Resources = game.Resources.Subtract(totalCost);
             cell.Building = building;
             game.Hand.RemoveAt(idx);
-            message = $"Built {bDef.Name} at ({row},{col}) on {landDef.Terrain}. Spent: {totalCost}.";
+            message = $"Built {bDef.Name} on {describeCell(cell)} over {landDef.Name}. Spent: {totalCost}.";
             if (bDef.Occupies > 0)
                 message += $" Needs {bDef.Occupies} worker{(bDef.Occupies != 1 ? "s" : "")} (assigned at end of round).";
         }
@@ -408,26 +441,26 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var occupied = GetOccupiedWorkers(game);
         var available = game.Resources.People - occupied;
         var popCap = GetPopulationCap(game);
+        var placedCells = game.Board.AllCells()
+            .Where(c => c.Land is not null)
+            .ToList();
+
         sb.AppendLine($"Round {game.Round} | {game.PlayerName} | {game.Resources} | Deck: {game.LandDeck.Count} cards | Population: {game.Resources.People}/{popCap} | Workers: {occupied} occupied, {available} available");
         sb.AppendLine();
-        sb.Append("      ");
-        for (int c = 0; c < Board.Cols; c++) sb.Append($"  [{c}]  ");
-        sb.AppendLine();
+        sb.AppendLine($"Board ({placedCells.Count}/{Board.Rows * Board.Cols}):");
 
-        for (int r = 0; r < Board.Rows; r++)
+        if (placedCells.Count == 0)
         {
-            sb.Append($"  [{r}]  ");
-            for (int c = 0; c < Board.Cols; c++)
-            {
-                var cell = game.Board.GetCell(r, c);
-                sb.Append(RenderCell(cell).PadRight(7));
-            }
-            sb.AppendLine();
+            sb.AppendLine("  [next] Empty slot");
+            return sb.ToString().TrimEnd();
         }
 
-        sb.AppendLine();
-        sb.AppendLine("Legend: FOR=Forest  PLN=Plains  HIL=Hill  BCH=Beach  WST=Wasteland");
-        sb.AppendLine("        SET=Settlement  FRM=Farm  LMB=LumberCamp  FSH=FishingCamp  SHP=SheepPasture  !=disabled  ###=locked  ...=empty");
+        for (int i = 0; i < placedCells.Count; i++)
+            sb.AppendLine($"  [{i + 1}] {RenderCell(placedCells[i])}");
+
+        if (placedCells.Count < Board.Rows * Board.Cols)
+            sb.AppendLine("  [next] Empty slot");
+
         return sb.ToString().TrimEnd();
     }
 
@@ -519,36 +552,43 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
     private string RenderCell(BoardCell cell)
     {
-        if (cell.IsLocked) return " ### ";
-        if (cell.Land == null) return " ... ";
-
-        var landDef = (LandDefinition)catalog.Get(cell.Land.DefinitionId);
-        var abbr = landDef.Terrain switch
-        {
-            TerrainType.Forest => "FOR",
-            TerrainType.Plains => "PLN",
-            TerrainType.Hill   => "HIL",
-            TerrainType.Beach     => "BCH",
-            TerrainType.Wasteland => "WST",
-            _ => "???"
-        };
-
-        if (cell.Building == null) return $" {abbr} ";
+        var land = cell.Land!;
+        var landDef = (LandDefinition)catalog.Get(land.DefinitionId);
+        if (cell.Building == null)
+            return $"{landDef.Name} | fertility ×{land.Fertility / 10.0:0.0}";
 
         var bDef = (BuildingDefinition)catalog.Get(cell.Building.DefinitionId);
-        var bAbbr = bDef.BuildingType switch
-        {
-            BuildingType.Settlement  => "SET",
-            BuildingType.Farm        => "FRM",
-            BuildingType.LumberCamp  => "LMB",
-            BuildingType.FishingCamp => "FSH",
-            BuildingType.SheepPasture => "SHP",
-            _ => "???"
-        };
-        var flag = cell.Building.IsActive ? "" : "!";
-        var workers = bDef.Occupies > 0 ? $"{cell.Building.AssignedWorkers}/{bDef.Occupies}" : "";
-        var popCap = cell.Building.PopulationCapacity > 0 ? $"p{cell.Building.PopulationCapacity}" : "";
-        return $"{bAbbr}{flag}{workers}{popCap}";
+        var status = cell.Building.IsActive ? "active" : "disabled";
+        var details = new List<string> { $"on {landDef.Name}", status };
+        if (bDef.Occupies > 0)
+            details.Add($"workers {cell.Building.AssignedWorkers}/{bDef.Occupies}");
+        if (cell.Building.PopulationCapacity > 0)
+            details.Add($"cap {cell.Building.PopulationCapacity}");
+        return $"{bDef.Name} | {string.Join(" | ", details)}";
+    }
+
+    private static int GetSlotNumber(BoardCell cell) => cell.Row * Board.Cols + cell.Col + 1;
+
+    private static BoardCell FindNextLandPlacementCell(GameState game)
+    {
+        return game.Board.AllCells()
+            .FirstOrDefault(c => !c.IsLocked && c.Land is null)
+            ?? throw new InvalidOperationException("No empty board slot is available for a land card.");
+    }
+
+    private BoardCell FindNextBuildingPlacementCell(GameState game, BuildingDefinition buildingDefinition)
+    {
+        return game.Board.AllCells()
+            .Where(c =>
+                c.Land is not null &&
+                c.Building is null &&
+                buildingDefinition.CanBuildOn(((LandDefinition)catalog.Get(c.Land.DefinitionId)).Terrain))
+            .OrderByDescending(c => c.Land!.Fertility)
+            .ThenBy(c => c.Row)
+            .ThenBy(c => c.Col)
+            .FirstOrDefault()
+            ?? throw new InvalidOperationException(
+                $"No compatible board slot is available for {buildingDefinition.Name}. Play a compatible land card first.");
     }
 
     private static void ValidateBoardPosition(int row, int col)
