@@ -1,5 +1,10 @@
 [
   {
+    "hash": "58002e2",
+    "message": "feat: banner headers straddle panel border \u2014 half in, half out",
+    "date": "2026-03-31"
+  },
+  {
     "hash": "1bb86d5",
     "message": "chore: regenerate changelog and version after UI restyle",
     "date": "2026-03-31"
@@ -192,11 +197,6 @@
   {
     "hash": "ec0f6b6",
     "message": "feat: settlement population capacity (10-40 rolled at creation, caps total People)",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "45fb655",
-    "message": "fix: remove duplicate People/Population display in WebViewer",
     "date": "2026-03-28"
   }
 ]

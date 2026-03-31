@@ -498,7 +498,7 @@ static class ViewerHtml
     z-index: 4;
     display: block;
     width: fit-content;
-    margin: -28px auto 14px;
+    margin: -35px auto 14px;
     padding: 6px 32px;
     font-family: 'Cinzel Decorative', serif;
     font-size: 15px;
@@ -927,7 +927,7 @@ function render(game) {
   const stacks = Array.from(stackMap.values())
     .sort((a, b) => a.landName.localeCompare(b.landName));
 
-  boardSection.innerHTML = `<div class="panel-corners"></div><h2 class="section-banner">Board Stacks (${stacks.length})</h2>`;
+  boardSection.innerHTML = `<div class="panel-corners"></div><h2 class="section-banner">Table</h2>`;
 
   for (const stack of stacks) {
     const div = el('div', 'cell');
@@ -1001,7 +1001,7 @@ function render(game) {
   // Hand
   const handSection = el('div', 'hand-section panel-frame');
   const handCount = game.hand ? game.hand.length : 0;
-  handSection.innerHTML = `<div class="panel-corners"></div><h2 class="section-banner">Hand (${handCount}/7)</h2>`;
+  handSection.innerHTML = `<div class="panel-corners"></div><h2 class="section-banner">Hand</h2>`;
   const handDiv = el('div', 'hand');
   if (game.hand) {
     for (const card of game.hand) {
