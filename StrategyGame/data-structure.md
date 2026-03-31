@@ -35,6 +35,15 @@ flowchart TD
     B --> D[Forest]
     B --> E[Beach]
     B --> F[Hill]
+
+    C --> G[Farm]
+    C --> H[Settlement]
+    D --> I[Lumber Camp]
+    D --> H
+    E --> J[Fishing Camp]
+    E --> H
+    F --> K[Sheep Pasture]
+    F --> H
 ```
 
 Interpretation:
@@ -42,6 +51,7 @@ Interpretation:
 - Empty is the root node and initial state of board ownership potential.
 - Terrain is abstract and documents the transition rule: only terrain cards can fill Empty.
 - Plains, Forest, Beach, and Hill are concrete implemented terrain outcomes.
+- Building layer is shown as current implementation rules: Farm on Plains, Lumber Camp on Forest, Fishing Camp on Beach, Sheep Pasture on Hill, and Settlement on any non-empty/non-wasteland terrain.
 
 ---
 
