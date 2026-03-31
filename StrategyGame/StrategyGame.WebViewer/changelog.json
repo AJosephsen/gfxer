@@ -1,5 +1,15 @@
 [
   {
+    "hash": "b4468be",
+    "message": "fix: remove automatic empty slot expansion \u2014 board stays at 4 slots",
+    "date": "2026-03-31"
+  },
+  {
+    "hash": "a9bfbd5",
+    "message": "feat: empty terrain cards \u2014 board starts with 4 empty slots, land replaces empty, adjacent expansion",
+    "date": "2026-03-31"
+  },
+  {
     "hash": "5eb1248",
     "message": "fix: add spacing before pickaxe icon in Pop stat",
     "date": "2026-03-31"
@@ -187,16 +197,6 @@
   {
     "hash": "9d79944",
     "message": "feat: add CardArt image generation script",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "7b640c8",
-    "message": "chore: gitignore api.token",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "8030eeb",
-    "message": "feat: add delete_game MCP command",
     "date": "2026-03-28"
   }
 ]
