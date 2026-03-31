@@ -411,8 +411,9 @@ static class ViewerHtml
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 16px;
-    background: linear-gradient(to bottom, rgba(10,7,3,0.92) 0%, rgba(10,7,3,0.0) 100%);
+    padding: 8px 16px;
+    background: linear-gradient(to bottom, rgba(10,7,3,0.95) 0%, rgba(10,7,3,0.85) 70%, rgba(10,7,3,0.0) 100%);
+    border-bottom: 1px solid var(--gold-dark);
     font-family: 'Cinzel', serif;
     font-size: 11px;
     flex-wrap: nowrap;
@@ -446,9 +447,77 @@ static class ViewerHtml
 
 
 
+  /* ── Ornate panel frame (shared) ── */
+  .panel-frame {
+    position: relative;
+    border: 2px solid var(--gold-dim);
+    border-radius: 12px;
+    background: linear-gradient(175deg, rgba(14,10,4,0.82) 0%, rgba(22,16,6,0.78) 100%);
+    box-shadow:
+      inset 0 0 0 1px rgba(200,168,75,0.10),
+      inset 0 1px 0 0 rgba(200,168,75,0.18),
+      0 0 0 4px rgba(10,7,3,0.85),
+      0 0 0 6px var(--gold-dark),
+      0 0 0 8px rgba(10,7,3,0.70),
+      0 8px 32px rgba(0,0,0,0.7);
+    padding: 18px 14px 14px;
+  }
+  /* Decorative corner nubs */
+  .panel-frame::before,
+  .panel-frame::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--gold-bright) 0%, var(--gold-dim) 60%, var(--gold-dark) 100%);
+    box-shadow: 0 0 6px rgba(200,168,75,0.5), inset 0 1px 2px rgba(255,255,255,0.3);
+    z-index: 3;
+  }
+  .panel-frame::before { top: -7px; left: -7px; }
+  .panel-frame::after  { top: -7px; right: -7px; }
+  .panel-corners::before,
+  .panel-corners::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--gold-bright) 0%, var(--gold-dim) 60%, var(--gold-dark) 100%);
+    box-shadow: 0 0 6px rgba(200,168,75,0.5), inset 0 1px 2px rgba(255,255,255,0.3);
+    z-index: 3;
+  }
+  .panel-corners::before { bottom: -7px; left: -7px; }
+  .panel-corners::after  { bottom: -7px; right: -7px; }
+
+  /* ── Banner header (rounded ribbon) ── */
+  .section-banner {
+    display: block;
+    width: fit-content;
+    margin: 0 auto 14px;
+    padding: 6px 32px;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 15px;
+    letter-spacing: 2.5px;
+    text-align: center;
+    color: #f5e6c8;
+    background: linear-gradient(180deg, #8b2020 0%, #6e1616 45%, #4a0e0e 100%);
+    border: 2px solid #c8a84b;
+    border-radius: 24px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,180,120,0.25),
+      inset 0 -2px 4px rgba(0,0,0,0.4),
+      0 2px 8px rgba(0,0,0,0.6),
+      0 0 0 3px rgba(10,7,3,0.7),
+      0 0 0 5px var(--gold-dark);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5);
+  }
+
   .board-section {
     max-width: 1120px;
-    margin: 0 auto 24px;
+    margin: 54px auto 28px;
   }
   .board-section h2 {
     font-family: 'Cinzel Decorative', serif;
@@ -603,8 +672,8 @@ static class ViewerHtml
   }
 
   .hand-section {
-    max-width: 800px;
-    margin: 0 auto;
+    max-width: 860px;
+    margin: 0 auto 28px;
   }
   .hand-section h2 {
     font-family: 'Cinzel Decorative', serif;
@@ -828,7 +897,7 @@ function render(game) {
     sp('🃏', game.landDeck ? game.landDeck.length : '?', 'Deck');
 
   // Board — aggregate by land type into unified terrain stacks
-  const boardSection = el('div', 'board-section');
+  const boardSection = el('div', 'board-section panel-frame');
   const boardWrap = el('div', 'board-container');
   const board = el('div', 'board');
   const cells = game.board.cells;
@@ -856,7 +925,7 @@ function render(game) {
   const stacks = Array.from(stackMap.values())
     .sort((a, b) => a.landName.localeCompare(b.landName));
 
-  boardSection.innerHTML = `<h2>Board Stacks (${stacks.length})</h2>`;
+  boardSection.innerHTML = `<div class="panel-corners"></div><h2 class="section-banner">Board Stacks (${stacks.length})</h2>`;
 
   for (const stack of stacks) {
     const div = el('div', 'cell');
@@ -928,9 +997,9 @@ function render(game) {
   v.appendChild(boardSection);
 
   // Hand
-  const handSection = el('div', 'hand-section');
+  const handSection = el('div', 'hand-section panel-frame');
   const handCount = game.hand ? game.hand.length : 0;
-  handSection.innerHTML = `<h2>Hand (${handCount}/7)</h2>`;
+  handSection.innerHTML = `<div class="panel-corners"></div><h2 class="section-banner">Hand (${handCount}/7)</h2>`;
   const handDiv = el('div', 'hand');
   if (game.hand) {
     for (const card of game.hand) {
