@@ -15,13 +15,14 @@ Core intent:
 | Type | Purpose |
 |---|---|
 | Empty | Root state of a controllable board slot. No production by itself. Accepts terrain placement. |
-| Terrain (abstract) | Conceptual transition layer between Empty and concrete terrain variants. Not a direct card in hand. |
-| Plains | Fertile baseline terrain. Supports broad expansion and agriculture-focused development. |
-| Forest | Wood-focused terrain. Supports forestry and industry chains. |
-| Beach | Coastal terrain. Supports coastal and trade-oriented placement chains. |
-| Hill | Elevated terrain. Supports pasture/defensive and specialized upland chains. |
+| Terrain (abstract) | Conceptual parent type for concrete terrain variants. Not a direct card in hand. |
+| Plains | Concrete Terrain implementation. Fertile baseline terrain for agriculture-focused development. |
+| Forest | Concrete Terrain implementation. Wood-focused terrain for forestry and industry chains. |
+| Beach | Concrete Terrain implementation. Coastal terrain for trade and shoreline building chains. |
+| Hill | Concrete Terrain implementation. Elevated terrain for pasture, defense, and upland chains. |
 
 Note: The deck is the exploration mechanism that yields terrain cards. Playing those cards converts Empty slots into controlled territory.
+Note: In JSON, concrete terrain cards use type = land and then specify terrain = Plains, Forest, Beach, or Hill.
 
 ---
 
