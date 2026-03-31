@@ -63,6 +63,30 @@ public sealed class McpToolIntegrationTests
         Assert.Contains("Round 1", output);
     }
 
+    [Fact]
+    public void GetStatus_ReturnsResourcesAndPopulationSummary()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        var output = GameManagementTools.GetStatus(svc, game.GameId);
+        Assert.Contains("=== Game Status: Alice — Round 1 ===", output);
+        Assert.Contains("Resources:", output);
+        Assert.Contains("Population:", output);
+        Assert.Contains("Land deck:", output);
+    }
+
+    [Fact]
+    public void DeleteGame_RemovesSavedGame()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+
+        var output = GameManagementTools.DeleteGame(svc, game.GameId);
+
+        Assert.Contains(game.GameId, output);
+        Assert.Empty(svc.ListGames());
+    }
+
     // ── get_board / get_hand ─────────────────────────────────────────────────
 
     [Fact]
@@ -104,6 +128,21 @@ public sealed class McpToolIntegrationTests
         DeckTools.DrawCard(svc, game.GameId);
         var updated = svc.LoadGame(game.GameId);
         Assert.Equal(5, updated.Hand.Count);
+    }
+
+    [Fact]
+    public void DiscardCard_RemovesCardFromHand()
+    {
+        var svc = CreateService();
+        var game = svc.StartGame("Alice");
+        var card = game.Hand.First();
+
+        var output = DeckTools.DiscardCard(svc, game.GameId, card.InstanceId);
+
+        Assert.Contains("Discarded", output);
+        var updated = svc.LoadGame(game.GameId);
+        Assert.DoesNotContain(updated.Hand, c => c.InstanceId == card.InstanceId);
+        Assert.Contains(updated.DiscardPile, c => c.InstanceId == card.InstanceId);
     }
 
     // ── get_market / invest ──────────────────────────────────────────────────
@@ -164,6 +203,15 @@ public sealed class McpToolIntegrationTests
         Assert.Contains("End of Round 1", output);
         Assert.Contains("Flux", output);
         Assert.Contains("Round 2", output); // board is rendered after increment
+    }
+
+    [Fact]
+    public void GetVersion_ReturnsVersionAndRecentCommitsSection()
+    {
+        var output = VersionTools.GetVersion();
+
+        Assert.Contains("Version:", output);
+        Assert.Contains("Recent commits", output);
     }
 
     // ── Full game flow ───────────────────────────────────────────────────────
