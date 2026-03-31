@@ -302,6 +302,29 @@ public sealed class GameServiceTests
             svc.PlayCard(game.GameId, landCard.InstanceId, 0, 0));
     }
 
+    [Fact]
+    public void PlayCard_Land_BoardStaysAtFourSlots()
+    {
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
+        var game = svc.StartGame("Alice");
+        // Inject 3 terrain cards into hand
+        game.Hand.Add(new LandCard { DefinitionId = "land_forest" });
+        game.Hand.Add(new LandCard { DefinitionId = "land_plains" });
+        game.Hand.Add(new LandCard { DefinitionId = "land_hill" });
+        repo.Save(game);
+
+        var lands = game.Hand.OfType<LandCard>().Take(3).ToList();
+        foreach (var land in lands)
+            svc.PlayCard(game.GameId, land.InstanceId);
+
+        var updated = svc.LoadGame(game.GameId);
+        var allCells = updated.Board.AllCells().Where(c => !c.IsLocked).ToList();
+        Assert.Equal(4, allCells.Count);
+        Assert.Equal(3, allCells.Count(c => c.HasTerrain));
+        Assert.Single(allCells, c => c.IsEmpty);
+    }
+
     // ── PlayCard (building) ─────────────────────────────────────────────────
 
     [Fact]
