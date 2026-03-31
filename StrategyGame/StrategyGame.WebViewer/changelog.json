@@ -1,5 +1,10 @@
 [
   {
+    "hash": "1bb86d5",
+    "message": "chore: regenerate changelog and version after UI restyle",
+    "date": "2026-03-31"
+  },
+  {
     "hash": "0c2b2c4",
     "message": "feat: ornate panel frames, crimson banner headers, polished stats bar",
     "date": "2026-03-31"
@@ -192,11 +197,6 @@
   {
     "hash": "45fb655",
     "message": "fix: remove duplicate People/Population display in WebViewer",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "ca34374",
-    "message": "feat: WebViewer shows population/occupation and worker assignments",
     "date": "2026-03-28"
   }
 ]

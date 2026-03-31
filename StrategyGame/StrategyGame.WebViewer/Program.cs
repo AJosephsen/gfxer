@@ -492,11 +492,13 @@ static class ViewerHtml
   .panel-corners::before { bottom: -7px; left: -7px; }
   .panel-corners::after  { bottom: -7px; right: -7px; }
 
-  /* ── Banner header (rounded ribbon) ── */
+  /* ── Banner header (rounded ribbon) — straddles the frame border ── */
   .section-banner {
+    position: relative;
+    z-index: 4;
     display: block;
     width: fit-content;
-    margin: 0 auto 14px;
+    margin: -28px auto 14px;
     padding: 6px 32px;
     font-family: 'Cinzel Decorative', serif;
     font-size: 15px;

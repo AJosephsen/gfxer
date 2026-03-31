@@ -1,0 +1,4 @@
+- generic [active] [ref=e1]:
+  - generic "Open menu" [ref=e2] [cursor=pointer]:
+    - generic [ref=e3]: ⚔
+  - generic [ref=e5]: Choose a chronicle to watch
