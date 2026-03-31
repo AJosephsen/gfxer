@@ -1,5 +1,20 @@
 [
   {
+    "hash": "263d7b6",
+    "message": "feat: add data-driven catalog inheritance support",
+    "date": "2026-03-31"
+  },
+  {
+    "hash": "cae5b30",
+    "message": "docs: add data-driven card/resource/tech data-structure spec",
+    "date": "2026-03-30"
+  },
+  {
+    "hash": "f45ac08",
+    "message": "feat: improve stack UI readability and auto-placement flow",
+    "date": "2026-03-30"
+  },
+  {
     "hash": "3c6299c",
     "message": "fix: reduce board cell dark overlay from 0.35 to 0.08 \u2014 tiles now match hand card brightness",
     "date": "2026-03-30"
@@ -183,20 +198,5 @@
     "hash": "322b10e",
     "message": "fix: register IGameRepository in DI; add README and rebuild script",
     "date": "2026-03-28"
-  },
-  {
-    "hash": "93bd140",
-    "message": "chore: add VS Code MCP server config for strategy-game",
-    "date": "2026-03-27"
-  },
-  {
-    "hash": "e796065",
-    "message": "test: assert known commit message appears in get_version history output",
-    "date": "2026-03-27"
-  },
-  {
-    "hash": "274f5b8",
-    "message": "feat: add get_version MCP tool with git tag, commit hash, dirty status, and recent commits",
-    "date": "2026-03-27"
   }
 ]

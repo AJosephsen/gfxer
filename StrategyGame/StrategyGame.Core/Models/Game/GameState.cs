@@ -27,6 +27,9 @@ public sealed class GameState
     /// <summary>Current player resources.</summary>
     public ResourceAmount Resources { get; set; } = ResourceAmount.Zero;
 
+    /// <summary>Player technology levels used by placement requirements and future tech progression.</summary>
+    public Dictionary<string, int> Technologies { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
     public DateTimeOffset LastPlayedAt { get; set; } = DateTimeOffset.UtcNow;
 }

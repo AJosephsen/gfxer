@@ -11,6 +11,12 @@ var savesDir = Path.Combine(
 
 var catalog = new CardCatalog();
 
+static bool HasAsset(string folder, string id)
+{
+  var path = Path.Combine(AppContext.BaseDirectory, "Assets", folder, $"{id}.webp");
+  return File.Exists(path);
+}
+
 // List all games
 app.MapGet("/api/games", () =>
 {
@@ -62,16 +68,18 @@ app.MapGet("/api/catalog", () =>
             type = "building",
             name = b.Name,
             description = b.Description,
-      level = b.Level,
-      tags = b.Tags,
+          level = b.Level,
+          tags = b.Tags,
+          hasCardArt = HasAsset("Cards", b.Id),
+          hasLandArt = HasAsset("Lands", b.Id),
             buildingType = b.BuildingType.ToString(),
             allowedTerrains = b.AllowedTerrains.Select(t => t.ToString()).ToArray(),
             occupies = b.Occupies,
-            production = new { food = b.Production.Food, people = b.Production.People, wood = b.Production.Wood },
-            upkeep = new { food = b.Upkeep.Food, people = b.Upkeep.People, wood = b.Upkeep.Wood },
-            playCost = new { food = b.PlayCost.Food, people = b.PlayCost.People, wood = b.PlayCost.Wood },
+          production = b.Production.ToDictionary(includeZeroKnown: false),
+          upkeep = b.Upkeep.ToDictionary(includeZeroKnown: false),
+          playCost = b.PlayCost.ToDictionary(includeZeroKnown: false),
             fluxCost = b.FluxCost,
-            investCost = new { food = b.InvestCost.Food, people = b.InvestCost.People, wood = b.InvestCost.Wood }
+          investCost = b.InvestCost.ToDictionary(includeZeroKnown: false)
         },
         LandDefinition l => new
         {
@@ -81,9 +89,11 @@ app.MapGet("/api/catalog", () =>
             description = l.Description,
           level = l.Level,
           tags = l.Tags,
+          hasCardArt = HasAsset("Cards", l.Id),
+          hasLandArt = HasAsset("Lands", l.Id),
             terrain = l.Terrain.ToString(),
             fluxCost = (int?)l.FluxCost,
-            investCost = new { food = l.InvestCost.Food, people = l.InvestCost.People, wood = l.InvestCost.Wood }
+          investCost = l.InvestCost.ToDictionary(includeZeroKnown: false)
         } as object,
         _ => new { id = d.Id, type = "unknown", name = d.Name }
     }).ToList();
@@ -500,6 +510,12 @@ static class ViewerHtml
       inset 0 0 0 1px rgba(232,201,106,0.18),
       0 0 0 1px rgba(38,28,9,0.82);
   }
+  .cell.art-fallback {
+    background:
+      radial-gradient(circle at 30% 20%, rgba(232,201,106,0.18), transparent 35%),
+      linear-gradient(135deg, rgba(63,46,18,0.96), rgba(24,18,8,0.96));
+    background-blend-mode: normal;
+  }
   .cell.has-art::before {
     content: '';
     position: absolute;
@@ -616,6 +632,11 @@ static class ViewerHtml
     background-position: center;
     flex-shrink: 0;
   }
+  .card.art-fallback {
+    background:
+      radial-gradient(circle at 25% 18%, rgba(232,201,106,0.16), transparent 32%),
+      linear-gradient(145deg, rgba(72,53,22,0.98), rgba(27,20,9,0.98));
+  }
   /* Title bar overlay — sits in the frame's title area */
   .card .card-title {
     position: absolute;
@@ -708,6 +729,17 @@ let currentGameId = null;
 let pollTimer = null;
 let lastJson = '';
 
+const RESOURCE_META = {
+  food: { icon: '🌾', label: 'Food' },
+  wood: { icon: '🪵', label: 'Wood' },
+  people: { icon: '👥', label: 'People' },
+  flux: { icon: '⚡', label: 'Flux' },
+  gold: { icon: '🪙', label: 'Gold' },
+  bricks: { icon: '🧱', label: 'Bricks' },
+  sugar: { icon: '🍬', label: 'Sugar' },
+  happiness: { icon: '☺', label: 'Happiness' }
+};
+
 async function loadCatalog() {
   const res = await fetch(`${API}/api/catalog`);
   const defs = await res.json();
@@ -792,6 +824,7 @@ function render(game) {
     sp('🪵', res.wood, 'Wood') +
     sp('👥', `${res.people}/${popCap} · ${totalOccupied}⛏`, 'Pop') +
     sp('⚡', `${res.flux ?? res.focus ?? 0}/14`, 'Flux') +
+    extraResourcePills(res) +
     sp('🃏', game.landDeck ? game.landDeck.length : '?', 'Deck');
 
   // Board — aggregate by land type into unified terrain stacks
@@ -829,13 +862,21 @@ function render(game) {
     const div = el('div', 'cell');
     const stackCells = stack.cells;
     div.classList.add('has-art');
-    div.style.backgroundImage = `url(/assets/lands/${stack.landId}.webp)`;
+    if (catalog[stack.landId]?.hasLandArt) {
+      div.style.backgroundImage = `url(/assets/lands/${stack.landId}.webp)`;
+    } else {
+      div.classList.add('art-fallback');
+    }
 
     const topBuildingCell = stackCells
       .filter(c => c.building)
       .sort((a, b) => (b.land.fertility || 0) - (a.land.fertility || 0))[0];
     if (topBuildingCell) {
-      div.style.backgroundImage = `url(/assets/lands/${topBuildingCell.building.definitionId}.webp)`;
+      const topDef = catalog[topBuildingCell.building.definitionId];
+      if (topDef?.hasLandArt) {
+        div.style.backgroundImage = `url(/assets/lands/${topBuildingCell.building.definitionId}.webp)`;
+        div.classList.remove('art-fallback');
+      }
     }
 
     const stackCount = stackCells.length;
@@ -848,21 +889,14 @@ function render(game) {
       const occupies = bDef.occupies || 0;
       const assigned = c.building.assignedWorkers || 0;
       const ratio = occupies > 0 ? Math.min(1, assigned / occupies) : 1;
-      return {
-        food: sum.food + Math.round((bDef.production?.food || 0) * ratio),
-        wood: sum.wood + Math.round((bDef.production?.wood || 0) * ratio),
-        people: sum.people + Math.round((bDef.production?.people || 0) * ratio),
-      };
-    }, { food: 0, wood: 0, people: 0 });
+      return mergeResourceMaps(sum, scaleResourceMap(bDef.production || {}, ratio));
+    }, {});
 
     const badge = `Cells ${buildingCount}/${stackCount}`;
 
     let statParts = [`avg fert ×${(avgFertility / 10).toFixed(1)}`];
     if (buildingCount > 0) statParts.push(`buildings ${buildingCount}`);
-    const prodParts = [];
-    if (estimatedProduction.food > 0) prodParts.push(`+${estimatedProduction.food}🌾`);
-    if (estimatedProduction.wood > 0) prodParts.push(`+${estimatedProduction.wood}🪵`);
-    if (estimatedProduction.people > 0) prodParts.push(`+${estimatedProduction.people}👥`);
+    const prodParts = formatResourceMap(estimatedProduction, '+');
     if (prodParts.length > 0) statParts.push(`prod ${prodParts.join(' ')}`);
 
     const displayTitle = stack.landName;
@@ -916,7 +950,11 @@ function render(game) {
 function makeCard(card) {
   const def = catalog[card.definitionId];
   const cardDiv = el('div', 'card');
-  cardDiv.style.backgroundImage = `url(/assets/cards/${card.definitionId}.webp)`;
+  if (def?.hasCardArt) {
+    cardDiv.style.backgroundImage = `url(/assets/cards/${card.definitionId}.webp)`;
+  } else {
+    cardDiv.classList.add('art-fallback');
+  }
 
   // Title bar
   const title = el('div', 'card-title');
@@ -936,14 +974,9 @@ function makeCard(card) {
   } else if (def) {
     if (def.occupies > 0)
       rows.push(['Workers', `0–${def.occupies}`]);
-    const prod = [];
-    if (def.production?.food)   prod.push(`${def.production.food}🌾`);
-    if (def.production?.people) prod.push(`${def.production.people}👥`);
-    if (def.production?.wood)   prod.push(`${def.production.wood}🪵`);
+    const prod = formatResourceMap(def.production || {}, '');
     if (prod.length) rows.push(['+', prod.join(' ')]);
-    const up = [];
-    if (def.upkeep?.food)   up.push(`${def.upkeep.food}🌾`);
-    if (def.upkeep?.people) up.push(`${def.upkeep.people}👥`);
+    const up = formatResourceMap(def.upkeep || {}, '');
     if (up.length) rows.push(['–', up.join(' ')]);
     rows.push(['Flux', def.fluxCost]);
   }
@@ -958,6 +991,48 @@ function makeCard(card) {
 
 function sp(emoji, value, label) {
   return `<div class="sp"><span>${emoji}</span><span class="sv">${value}</span><span class="sl">${label}</span></div>`;
+}
+
+function extraResourcePills(resources) {
+  return Object.entries(resources || {})
+    .filter(([key, value]) => !['food', 'wood', 'people', 'flux', 'focus'].includes(key) && value)
+    .slice(0, 4)
+    .map(([key, value]) => {
+      const meta = RESOURCE_META[key] || { icon: '◈', label: prettyResourceName(key) };
+      return sp(meta.icon, value, meta.label);
+    })
+    .join('');
+}
+
+function mergeResourceMaps(base, delta) {
+  const merged = { ...base };
+  for (const [key, value] of Object.entries(delta || {})) {
+    merged[key] = (merged[key] || 0) + value;
+  }
+  return merged;
+}
+
+function scaleResourceMap(resources, ratio) {
+  const scaled = {};
+  for (const [key, value] of Object.entries(resources || {})) {
+    scaled[key] = Math.round(value * ratio);
+  }
+  return scaled;
+}
+
+function formatResourceMap(resources, prefix) {
+  return Object.entries(resources || {})
+    .filter(([, value]) => value)
+    .map(([key, value]) => `${prefix}${value}${resourceSuffix(key)}`);
+}
+
+function resourceSuffix(key) {
+  const meta = RESOURCE_META[key];
+  return meta ? meta.icon : ` ${prettyResourceName(key)}`;
+}
+
+function prettyResourceName(key) {
+  return key.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 function el(tag, cls) {

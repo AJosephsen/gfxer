@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
+using StrategyGame.Core.Models.Cards;
 using StrategyGame.Core.Catalog;
+using StrategyGame.Core.Models;
 using StrategyGame.Core.Services;
 using Xunit;
 
@@ -53,5 +55,32 @@ public sealed class CardCatalogTests
             service.Invest(game.GameId, "example_building_settlement_l2"));
 
         Assert.Contains("prototype/example definition", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void PlayCard_Upgrade_ReplacesTargetBuildingWhenRequirementsMet()
+    {
+        var repo = new InMemoryGameRepository();
+        var service = new GameService(repo, new CardCatalog());
+        var game = service.StartGame("Alice");
+        var cell = game.Board.AllCells().First(c => !c.IsLocked);
+
+        cell.Land = LandCard.Create("land_plains", 1);
+        cell.Building = BuildingCard.Create("example_building_settlement_l1", 1);
+        game.Technologies["governance"] = 2;
+        game.Resources = game.Resources with { Wood = 100, Flux = ResourceAmount.MaxFlux };
+        game.Hand.Clear();
+
+        var upgrade = BuildingCard.Create("example_building_settlement_l2", 2);
+        game.Hand.Add(upgrade);
+        repo.Save(game);
+
+        var (updated, message) = service.PlayCard(game.GameId, upgrade.InstanceId, cell.Row, cell.Col);
+
+        var upgraded = updated.Board.GetCell(cell.Row, cell.Col).Building;
+        Assert.NotNull(upgraded);
+        Assert.Equal("example_building_settlement_l2", upgraded!.DefinitionId);
+        Assert.Equal(2, upgraded.Level);
+        Assert.Contains("Upgraded", message);
     }
 }

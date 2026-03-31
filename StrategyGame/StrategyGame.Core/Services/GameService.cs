@@ -142,17 +142,21 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             if (cell.Land == null)
                 throw new InvalidOperationException(
                     $"{describeCell(cell)} has no land. Play a land card there first.");
-            if (cell.Building != null)
-                throw new InvalidOperationException(
-                    $"{describeCell(cell)} already has a {catalog.Get(cell.Building.DefinitionId).Name}.");
 
             var bDef = (BuildingDefinition)def;
             var landDef = (LandDefinition)catalog.Get(cell.Land.DefinitionId);
+            var isUpgrade = bDef.PlacementRequirements.TargetCard is not null;
+
+            if (!isUpgrade && cell.Building != null)
+                throw new InvalidOperationException(
+                    $"{describeCell(cell)} already has a {catalog.Get(cell.Building.DefinitionId).Name}.");
 
             if (!bDef.CanBuildOn(landDef.Terrain))
                 throw new InvalidOperationException(
                     $"{bDef.Name} cannot be built on {landDef.Terrain}. " +
                     $"Allowed terrain: {(bDef.AllowedTerrains.Length > 0 ? string.Join(", ", bDef.AllowedTerrains) : "any")}.");
+
+            ValidatePlacementRequirements(game, cell, bDef);
 
             var totalCost = bDef.PlayCost.Add(fluxCost);
             if (!game.Resources.CanAfford(totalCost))
@@ -160,9 +164,29 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
                     $"Cannot afford {bDef.Name}. Need: {totalCost}, Have: {game.Resources}.");
 
             game.Resources = game.Resources.Subtract(totalCost);
-            cell.Building = building;
+
+            if (isUpgrade)
+            {
+                var previous = cell.Building!;
+                cell.Building = new BuildingCard
+                {
+                    InstanceId = previous.InstanceId,
+                    DefinitionId = building.DefinitionId,
+                    Level = Math.Max(building.Level, previous.Level + 1),
+                    IsActive = previous.IsActive,
+                    AssignedWorkers = previous.AssignedWorkers,
+                    PopulationCapacity = Math.Max(previous.PopulationCapacity, building.PopulationCapacity)
+                };
+            }
+            else
+            {
+                cell.Building = building;
+            }
+
             game.Hand.RemoveAt(idx);
-            message = $"Built {bDef.Name} on {describeCell(cell)} over {landDef.Name}. Spent: {totalCost}.";
+            message = isUpgrade
+                ? $"Upgraded {describeCell(cell)} to {bDef.Name}. Spent: {totalCost}."
+                : $"Built {bDef.Name} on {describeCell(cell)} over {landDef.Name}. Spent: {totalCost}.";
             if (bDef.Occupies > 0)
                 message += $" Needs {bDef.Occupies} worker{(bDef.Occupies != 1 ? "s" : "")} (assigned at end of round).";
         }
@@ -329,10 +353,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             {
                 // Scale production linearly: base × (assigned / capacity)
                 double ratio = (double)building.AssignedWorkers / bDef.Occupies;
-                output = new ResourceAmount(
-                    Food: (int)Math.Round(bDef.Production.Food * ratio),
-                    People: (int)Math.Round(bDef.Production.People * ratio),
-                    Wood: (int)Math.Round(bDef.Production.Wood * ratio));
+                output = bDef.Production.Scale(ratio);
             }
             else
             {
@@ -356,7 +377,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         if (popCap > 0 && game.Resources.People > popCap)
         {
             var excess = game.Resources.People - popCap;
-            game.Resources = game.Resources with { People = popCap };
+            game.Resources = game.Resources.Set("people", popCap);
             sb.AppendLine($"Population:    capped at {popCap} (excess {excess} lost)");
         }
 
@@ -591,14 +612,117 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         return game.Board.AllCells()
             .Where(c =>
                 c.Land is not null &&
-                c.Building is null &&
-                buildingDefinition.CanBuildOn(((LandDefinition)catalog.Get(c.Land.DefinitionId)).Terrain))
+                CanPlaceBuildingOnCell(game, c, buildingDefinition))
             .OrderByDescending(c => c.Land!.Fertility)
             .ThenBy(c => c.Row)
             .ThenBy(c => c.Col)
             .FirstOrDefault()
             ?? throw new InvalidOperationException(
                 $"No compatible board slot is available for {buildingDefinition.Name}. Play a compatible land card first.");
+    }
+
+    private bool CanPlaceBuildingOnCell(GameState game, BoardCell cell, BuildingDefinition buildingDefinition)
+    {
+        if (cell.Land is null)
+            return false;
+
+        var isUpgrade = buildingDefinition.PlacementRequirements.TargetCard is not null;
+        if (!isUpgrade && cell.Building is not null)
+            return false;
+
+        var landDef = (LandDefinition)catalog.Get(cell.Land.DefinitionId);
+        if (!buildingDefinition.CanBuildOn(landDef.Terrain))
+            return false;
+
+        return MeetsPlacementRequirements(game, cell, buildingDefinition);
+    }
+
+    private void ValidatePlacementRequirements(GameState game, BoardCell cell, BuildingDefinition definition)
+    {
+        if (!MeetsPlacementRequirements(game, cell, definition, out var error))
+            throw new InvalidOperationException(error);
+    }
+
+    private bool MeetsPlacementRequirements(GameState game, BoardCell cell, BuildingDefinition definition) =>
+        MeetsPlacementRequirements(game, cell, definition, out _);
+
+    private bool MeetsPlacementRequirements(GameState game, BoardCell cell, BuildingDefinition definition, out string error)
+    {
+        var requirements = definition.PlacementRequirements;
+        var cellTags = GetCellTags(cell);
+
+        if (requirements.CellTags.Length > 0 && !requirements.CellTags.Any(tag => cellTags.Contains(tag)))
+        {
+            error = $"{definition.Name} requires one of these cell tags: {string.Join(", ", requirements.CellTags)}.";
+            return false;
+        }
+
+        if (requirements.CellTagsAll.Length > 0)
+        {
+            var missing = requirements.CellTagsAll.Where(tag => !cellTags.Contains(tag)).ToArray();
+            if (missing.Length > 0)
+            {
+                error = $"{definition.Name} requires all of these cell tags: {string.Join(", ", missing)}.";
+                return false;
+            }
+        }
+
+        if (requirements.TargetCard is not null)
+        {
+            if (cell.Building is null)
+            {
+                error = $"{definition.Name} requires an existing target building on the chosen cell.";
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(requirements.TargetCard.DefinitionId) &&
+                !string.Equals(cell.Building.DefinitionId, requirements.TargetCard.DefinitionId, StringComparison.OrdinalIgnoreCase))
+            {
+                error = $"{definition.Name} requires {requirements.TargetCard.DefinitionId} on the chosen cell.";
+                return false;
+            }
+
+            if (cell.Building.Level < requirements.TargetCard.MinLevel)
+            {
+                error = $"{definition.Name} requires target level {requirements.TargetCard.MinLevel} or higher.";
+                return false;
+            }
+        }
+
+        foreach (var techRequirement in requirements.Technology)
+        {
+            var currentLevel = game.Technologies.TryGetValue(techRequirement.Key, out var value) ? value : 0;
+            if (currentLevel < techRequirement.Value)
+            {
+                error = $"{definition.Name} requires technology {techRequirement.Key} level {techRequirement.Value}.";
+                return false;
+            }
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private HashSet<string> GetCellTags(BoardCell cell)
+    {
+        var tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (cell.Land is not null)
+        {
+            var landDef = (LandDefinition)catalog.Get(cell.Land.DefinitionId);
+            foreach (var tag in landDef.Tags)
+                tags.Add(tag);
+            tags.Add($"terrain:{landDef.Terrain.ToString().ToLowerInvariant()}");
+        }
+
+        if (cell.Building is not null)
+        {
+            var buildingDef = (BuildingDefinition)catalog.Get(cell.Building.DefinitionId);
+            foreach (var tag in buildingDef.Tags)
+                tags.Add(tag);
+        }
+
+        return tags;
     }
 
     private static void ValidateBoardPosition(int row, int col)
