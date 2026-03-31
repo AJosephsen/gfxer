@@ -136,7 +136,6 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             game.Resources = game.Resources.Subtract(fluxCost);
             cell.Land = landCard;
             game.Hand.RemoveAt(idx);
-            ExpandEmptySlots(game.Board, cell);
             message = $"Placed {def.Name} land on {describeCell(cell)}. Spent: {fluxAmount} Flux.";
         }
         else if (card is BuildingCard building)
@@ -603,27 +602,6 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
     }
 
     private static int GetSlotNumber(BoardCell cell) => cell.Row * Board.Cols + cell.Col + 1;
-
-    /// <summary>
-    /// After placing a terrain card, unlock orthogonally adjacent locked cells
-    /// by giving them Empty land cards so they become available for future placement.
-    /// </summary>
-    private static void ExpandEmptySlots(Board board, BoardCell placed)
-    {
-        int[][] dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
-        foreach (var d in dirs)
-        {
-            int nr = placed.Row + d[0], nc = placed.Col + d[1];
-            if (nr < 0 || nr >= Board.Rows || nc < 0 || nc >= Board.Cols)
-                continue;
-            var neighbor = board.GetCell(nr, nc);
-            if (neighbor.IsLocked && neighbor.Land == null)
-            {
-                neighbor.IsLocked = false;
-                neighbor.Land = LandCard.CreateEmpty();
-            }
-        }
-    }
 
     private static BoardCell FindNextLandPlacementCell(GameState game)
     {

@@ -877,24 +877,6 @@ public sealed class GameServiceTests
             svc.PlayCard(game.GameId, land.InstanceId, 0, 4));
     }
 
-    [Fact]
-    public void PlayCard_Land_ExpandsEmptySlotsToAdjacentCells()
-    {
-        var repo = new InMemoryGameRepository();
-        var svc = new GameService(repo, new CardCatalog());
-        var game = svc.StartGame("Alice");
-        // Place land at (1,1) — corner of starting zone, adjacent to locked cells
-        var land = game.Hand.OfType<LandCard>().First();
-        svc.PlayCard(game.GameId, land.InstanceId, 1, 1);
-        var updated = svc.LoadGame(game.GameId);
-        // (1,2) should now be unlocked with Empty land (right neighbor)
-        Assert.False(updated.Board.GetCell(1, 2).IsLocked);
-        Assert.True(updated.Board.GetCell(1, 2).IsEmpty);
-        // (2,1) should now be unlocked with Empty land (below neighbor)
-        Assert.False(updated.Board.GetCell(2, 1).IsLocked);
-        Assert.True(updated.Board.GetCell(2, 1).IsEmpty);
-    }
-
     // ── Wasteland ───────────────────────────────────────────────────────────
 
     [Fact]
