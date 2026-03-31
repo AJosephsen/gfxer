@@ -31,8 +31,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         for (int i = 0; i < 3; i++)
         {
             var landId = usableLandIds[Random.Shared.Next(usableLandIds.Length)];
-            var landDef = catalog.Get(landId);
-            game.Hand.Add(LandCard.Create(landId, landDef.Level));
+            var landDef = (LandDefinition)catalog.Get(landId);
+            game.Hand.Add(LandCard.Create(landDef));
         }
 
         var settlementDef = catalog.Get("building_settlement");
@@ -116,7 +116,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
                 $"{describeCell(cell)} is locked. Place a land card on an adjacent cell first to unlock it.");
 
         int fluxAmount = card is LandCard lc0
-            ? lc0.ComputeFluxCost(def.FluxCost)
+            ? lc0.FluxCost
             : def.FluxCost;
         var fluxCost = new ResourceAmount(Flux: fluxAmount);
         if (!game.Resources.CanAfford(fluxCost))
@@ -227,7 +227,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         game.LandDeck.RemoveAt(0);
         var drawn = catalog.Get(drawnId);
 
-        var newCard = LandCard.Create(drawnId);
+        var newCard = LandCard.Create((LandDefinition)drawn);
         game.Hand.Add(newCard);
         game.Resources = game.Resources.Subtract(new ResourceAmount(Flux: ResourceAmount.DrawCardFluxCost));
 
@@ -235,7 +235,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         repo.Save(game);
 
         var message = $"Drew {drawn.Name} from the map deck (id: {newCard.InstanceId}). " +
-                      $"Fertility ×{newCard.Fertility / 10.0:0.0}, Play cost ×{newCard.AccessibilityCost / 10.0:0.0}. " +
+                      $"Fertility ×{newCard.Fertility / 10.0:0.0}, Play cost: {newCard.FluxCost} Flux. " +
                       $"Spent: {ResourceAmount.DrawCardFluxCost} Flux.";
         return (game, message);
     }
@@ -261,8 +261,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
         game.Resources = game.Resources.Subtract(def.InvestCost);
 
-        CardBase newCard = def is LandDefinition
-            ? LandCard.Create(cardDefinitionId, def.Level)
+        CardBase newCard = def is LandDefinition landDef
+            ? LandCard.Create(landDef)
             : BuildingCard.Create(cardDefinitionId, def.Level);
 
         game.Hand.Add(newCard);
@@ -535,11 +535,9 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             else if (def is LandDefinition lDef)
             {
                 var lCard = (LandCard)card;
-                var actualCost = lCard.ComputeFluxCost(def.FluxCost);
-                var costNote = actualCost != def.FluxCost ? $" (×{lCard.AccessibilityCost / 10.0:0.0} of base {def.FluxCost})" : "";
                 sb.AppendLine($"      Terrain type: {lDef.Terrain}");
                 sb.AppendLine($"      Fertility:    ×{lCard.Fertility / 10.0:0.0}  (production bonus when built upon)");
-                sb.AppendLine($"      Play cost:    {actualCost} Flux{costNote}");
+                sb.AppendLine($"      Play cost:    {lCard.FluxCost} Flux");
             }
         }
 

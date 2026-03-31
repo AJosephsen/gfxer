@@ -1,33 +1,47 @@
+using StrategyGame.Core.Catalog;
+
 namespace StrategyGame.Core.Models.Cards;
 
 /// <summary>
 /// A terrain card placed on an empty board cell to enable building.
-/// Each instance has rolled stats giving it unique quality and access cost.
+/// Each instance has rolled Fertility and a pre-computed FluxCost.
 /// </summary>
 public sealed class LandCard : CardBase
 {
     /// <summary>
-    /// Fertility of this tile, in tenths (range 5–15).
-    /// 10 = 1.0× (average). Scales production of buildings placed here (future mechanic).
-    /// Roll: 5 + d(0–5) + d(0–5).
+    /// Fertility of this tile, in tenths.
+    /// 10 = 1.0× (average). Scales production of buildings placed here.
     /// </summary>
     public int Fertility { get; init; } = 10;
 
     /// <summary>
-    /// Terrain accessibility, in tenths (range 5–12).
-    /// 10 = 1.0× (average). Scales the Flux cost to play this card from hand.
-    /// Roll: 5 + d(0–4) + d(0–3).
+    /// Pre-computed Flux cost to play this card from hand.
+    /// Rolled at creation from base cost × fluxScale range.
     /// </summary>
-    public int AccessibilityCost { get; init; } = 10;
+    public int FluxCost { get; init; } = 0;
 
-    /// <summary>Create a new land card with randomly rolled stats.</summary>
-    public static LandCard Create(string definitionId, int level = 1) => new()
+    /// <summary>Create a new land card with randomly rolled stats from the catalog definition.</summary>
+    public static LandCard Create(LandDefinition def) => Create(def, Random.Shared);
+
+    /// <summary>Create a new land card with rolled stats, using a specific Random for testability.</summary>
+    public static LandCard Create(LandDefinition def, Random rng)
     {
-        DefinitionId = definitionId,
-        Level = level,
-        Fertility        = 5 + Random.Shared.Next(6) + Random.Shared.Next(6), // 5–15
-        AccessibilityCost = 5 + Random.Shared.Next(5) + Random.Shared.Next(4), // 5–12
-    };
+        var fr = def.StatRanges.Fertility;
+        var fertility = fr.Min + rng.Next(fr.Max - fr.Min + 1);
+
+        var sr = def.StatRanges.FluxScale;
+        var fluxScale = sr.Min + rng.Next(sr.Max - sr.Min + 1);
+        var fluxCost = Math.Max(1, (int)Math.Round(def.FluxCost * fluxScale / 10.0,
+            MidpointRounding.AwayFromZero));
+
+        return new()
+        {
+            DefinitionId = def.Id,
+            Level = def.Level,
+            Fertility = fertility,
+            FluxCost = fluxCost,
+        };
+    }
 
     /// <summary>Create an Empty land card (placeholder for unclaimed board slots).</summary>
     public static LandCard CreateEmpty() => new()
@@ -35,11 +49,6 @@ public sealed class LandCard : CardBase
         DefinitionId = "land_empty",
         Level = 1,
         Fertility = 0,
-        AccessibilityCost = 0,
+        FluxCost = 0,
     };
-
-    /// <summary>Flux cost to play this card, derived from catalog base × AccessibilityCost.</summary>
-    public int ComputeFluxCost(int baseFluxCost) =>
-        Math.Max(1, (int)Math.Round(baseFluxCost * AccessibilityCost / 10.0,
-            MidpointRounding.AwayFromZero));
 }

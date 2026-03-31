@@ -1051,9 +1051,7 @@ function makeCard(card) {
   if (card.$type === 'land' && def) {
     if (card.fertility)
       rows.push(['Fertility', `×${(card.fertility / 10).toFixed(1)}`]);
-    if (card.accessibilityCost)
-      rows.push(['Access', `×${(card.accessibilityCost / 10).toFixed(1)}`]);
-    rows.push(['Flux', def.fluxCost]);
+    rows.push(['Flux', card.fluxCost || def.fluxCost]);
   } else if (def) {
     if (def.occupies > 0)
       rows.push(['Workers', `0–${def.occupies}`]);

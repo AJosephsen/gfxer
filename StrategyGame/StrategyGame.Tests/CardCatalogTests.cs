@@ -65,7 +65,7 @@ public sealed class CardCatalogTests
         var game = service.StartGame("Alice");
         var cell = game.Board.AllCells().First(c => c.IsEmpty);
 
-        cell.Land = LandCard.Create("land_plains", 1);
+        cell.Land = LandCard.Create((LandDefinition)new CardCatalog().Get("land_plains"));
         cell.Building = BuildingCard.Create("example_building_settlement_l1", 1);
         game.Technologies["governance"] = 2;
         game.Resources = game.Resources with { Wood = 100, Flux = ResourceAmount.MaxFlux };

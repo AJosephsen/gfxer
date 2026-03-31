@@ -1,5 +1,15 @@
 [
   {
+    "hash": "8087c97",
+    "message": "test: board stays at 4 slots after placing 3 terrain cards",
+    "date": "2026-03-31"
+  },
+  {
+    "hash": "5e9e8bc",
+    "message": "chore: update changelog and version",
+    "date": "2026-03-31"
+  },
+  {
     "hash": "b4468be",
     "message": "fix: remove automatic empty slot expansion \u2014 board stays at 4 slots",
     "date": "2026-03-31"
@@ -187,16 +197,6 @@
   {
     "hash": "54d2e08",
     "message": "feat: card frame template + compose pipeline",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "3e69186",
-    "message": "fix: name outputs as {promptname}-{datetime}-{version}",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "9d79944",
-    "message": "feat: add CardArt image generation script",
     "date": "2026-03-28"
   }
 ]

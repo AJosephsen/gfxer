@@ -20,7 +20,11 @@
       "tags": ["terrain:forest", "buildable"],
       "terrain": "Forest",
       "fluxCost": 3,
-      "investCost": { "food": 2, "people": 0 }
+      "investCost": { "food": 2, "people": 0 },
+      "statRanges": {
+        "fertility": { "min": 5, "max": 15 },
+        "fluxScale": { "min": 5, "max": 12 }
+      }
     },
     {
       "type": "land",
@@ -31,7 +35,11 @@
       "tags": ["terrain:plains", "buildable", "agricultural"],
       "terrain": "Plains",
       "fluxCost": 3,
-      "investCost": { "food": 2, "people": 0 }
+      "investCost": { "food": 2, "people": 0 },
+      "statRanges": {
+        "fertility": { "min": 7, "max": 15 },
+        "fluxScale": { "min": 5, "max": 10 }
+      }
     },
     {
       "type": "land",
@@ -42,7 +50,11 @@
       "tags": ["terrain:hill", "buildable", "defensive"],
       "terrain": "Hill",
       "fluxCost": 3,
-      "investCost": { "food": 2, "people": 0 }
+      "investCost": { "food": 2, "people": 0 },
+      "statRanges": {
+        "fertility": { "min": 3, "max": 12 },
+        "fluxScale": { "min": 6, "max": 14 }
+      }
     },
     {
       "type": "land",
@@ -53,7 +65,11 @@
       "tags": ["terrain:beach", "buildable", "coastal"],
       "terrain": "Beach",
       "fluxCost": 3,
-      "investCost": { "food": 2, "people": 0 }
+      "investCost": { "food": 2, "people": 0 },
+      "statRanges": {
+        "fertility": { "min": 4, "max": 12 },
+        "fluxScale": { "min": 5, "max": 11 }
+      }
     },
     {
       "type": "land",
@@ -64,7 +80,11 @@
       "tags": ["terrain:wasteland"],
       "terrain": "Wasteland",
       "fluxCost": 3,
-      "investCost": { "food": 2, "people": 0 }
+      "investCost": { "food": 2, "people": 0 },
+      "statRanges": {
+        "fertility": { "min": 1, "max": 5 },
+        "fluxScale": { "min": 8, "max": 15 }
+      }
     },
     {
       "type": "building",

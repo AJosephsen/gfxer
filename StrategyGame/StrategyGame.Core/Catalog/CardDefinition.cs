@@ -38,6 +38,26 @@ public sealed record LandDefinition : CardDefinition
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public required TerrainType Terrain { get; init; }
+
+    /// <summary>Configurable stat roll ranges for land card instances.</summary>
+    public LandStatRanges StatRanges { get; init; } = new();
+}
+
+/// <summary>Min/max range for a single rolled stat (in tenths, 10 = ×1.0).</summary>
+public sealed record StatRange
+{
+    public int Min { get; init; } = 10;
+    public int Max { get; init; } = 10;
+}
+
+/// <summary>Configurable ranges for rolled stats on land card instances.</summary>
+public sealed record LandStatRanges
+{
+    /// <summary>Fertility range (in tenths). Default: fixed at 10 (×1.0).</summary>
+    public StatRange Fertility { get; init; } = new();
+
+    /// <summary>Flux cost scale range (in tenths). Rolled at creation, multiplied against base FluxCost. Default: fixed at 10 (×1.0).</summary>
+    public StatRange FluxScale { get; init; } = new();
 }
 
 public sealed record BuildingDefinition : CardDefinition

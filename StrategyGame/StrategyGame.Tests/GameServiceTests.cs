@@ -101,66 +101,80 @@ public sealed class GameServiceTests
     [Fact]
     public void LandCard_Create_FertilityInRange()
     {
+        var catalog = new CardCatalog();
+        var def = (LandDefinition)catalog.Get("land_plains");
         for (int i = 0; i < 200; i++)
         {
-            var card = LandCard.Create("land_plains");
-            Assert.InRange(card.Fertility, 5, 15);
+            var card = LandCard.Create(def);
+            Assert.InRange(card.Fertility, def.StatRanges.Fertility.Min, def.StatRanges.Fertility.Max);
         }
     }
 
     [Fact]
-    public void LandCard_Create_AccessibilityCostInRange()
+    public void LandCard_Create_FluxCostBakedFromRange()
     {
+        var catalog = new CardCatalog();
+        var def = (LandDefinition)catalog.Get("land_plains");
         for (int i = 0; i < 200; i++)
         {
-            var card = LandCard.Create("land_plains");
-            Assert.InRange(card.AccessibilityCost, 5, 12);
+            var card = LandCard.Create(def);
+            // FluxCost = round(base × scale/10), scale in [min..max]
+            var minCost = Math.Max(1, (int)Math.Round(def.FluxCost * def.StatRanges.FluxScale.Min / 10.0, MidpointRounding.AwayFromZero));
+            var maxCost = Math.Max(1, (int)Math.Round(def.FluxCost * def.StatRanges.FluxScale.Max / 10.0, MidpointRounding.AwayFromZero));
+            Assert.InRange(card.FluxCost, minCost, maxCost);
         }
     }
 
     [Fact]
-    public void LandCard_ComputeFluxCost_ScalesWithAccessibility()
+    public void LandCard_Create_FluxCostDeterministicWithSeed()
     {
-        var cheap  = new LandCard { DefinitionId = "land_plains", Fertility = 10, AccessibilityCost = 5  };
-        var normal = new LandCard { DefinitionId = "land_plains", Fertility = 10, AccessibilityCost = 10 };
-        var pricey = new LandCard { DefinitionId = "land_plains", Fertility = 10, AccessibilityCost = 12 };
-        Assert.Equal(2, cheap.ComputeFluxCost(3));   // round(3 × 0.5) = 2
-        Assert.Equal(3, normal.ComputeFluxCost(3));  // round(3 × 1.0) = 3
-        Assert.Equal(4, pricey.ComputeFluxCost(3));  // round(3 × 1.2) = 4
+        var catalog = new CardCatalog();
+        var def = (LandDefinition)catalog.Get("land_plains");
+        var rng = new Random(42);
+        var card = LandCard.Create(def, rng);
+        // With a seeded RNG the result is deterministic
+        var rng2 = new Random(42);
+        var card2 = LandCard.Create(def, rng2);
+        Assert.Equal(card.Fertility, card2.Fertility);
+        Assert.Equal(card.FluxCost, card2.FluxCost);
     }
 
     [Fact]
     public void StartGame_LandCardsHaveRolledStats()
     {
+        var catalog = new CardCatalog();
         var svc = CreateService();
         var game = svc.StartGame("Alice");
         foreach (var card in game.Hand.OfType<LandCard>())
         {
-            Assert.InRange(card.Fertility, 5, 15);
-            Assert.InRange(card.AccessibilityCost, 5, 12);
+            var def = (LandDefinition)catalog.Get(card.DefinitionId);
+            Assert.InRange(card.Fertility, def.StatRanges.Fertility.Min, def.StatRanges.Fertility.Max);
+            Assert.True(card.FluxCost >= 1);
         }
     }
 
     [Fact]
     public void DrawFromDeck_LandCardHasRolledStats()
     {
+        var catalog = new CardCatalog();
         var svc = CreateService();
         var game = svc.StartGame("Alice");
         var (updated, _) = svc.DrawFromDeck(game.GameId);
         var drawn = updated.Hand.Last() as LandCard;
         Assert.NotNull(drawn);
-        Assert.InRange(drawn.Fertility, 5, 15);
-        Assert.InRange(drawn.AccessibilityCost, 5, 12);
+        var def = (LandDefinition)catalog.Get(drawn.DefinitionId);
+        Assert.InRange(drawn.Fertility, def.StatRanges.Fertility.Min, def.StatRanges.Fertility.Max);
+        Assert.True(drawn.FluxCost >= 1);
     }
 
     [Fact]
-    public void PlayCard_LandCard_FluxCostReflectsAccessibility()
+    public void PlayCard_LandCard_FluxCostUsesCardFluxCost()
     {
         var repo = new InMemoryGameRepository();
         var svc = new GameService(repo, new CardCatalog());
         var game = svc.StartGame("Alice");
-        // Plant a card with known AccessibilityCost = 5 → cost = round(3 × 0.5) = 2
-        var cheapLand = new LandCard { DefinitionId = "land_plains", Fertility = 10, AccessibilityCost = 5 };
+        // Create a card with a known FluxCost of 2
+        var cheapLand = new LandCard { DefinitionId = "land_plains", Fertility = 10, FluxCost = 2 };
         game.Hand.Add(cheapLand);
         var targetCell = game.Board.GetCell(0, 4);
         targetCell.IsLocked = false;
@@ -261,12 +275,9 @@ public sealed class GameServiceTests
         var svc = CreateService();
         var game = svc.StartGame("Alice");
         var landCard = game.Hand.OfType<LandCard>().First();
-        var catalog = new CardCatalog();
-        var def = catalog.Get(landCard.DefinitionId);
-        var expectedCost = landCard.ComputeFluxCost(def.FluxCost);
         var fluxBefore = game.Resources.Flux;
         var (updated, _) = svc.PlayCard(game.GameId, landCard.InstanceId, 0, 0);
-        Assert.Equal(fluxBefore - expectedCost, updated.Resources.Flux);
+        Assert.Equal(fluxBefore - landCard.FluxCost, updated.Resources.Flux);
     }
 
     [Fact]
@@ -1145,9 +1156,11 @@ public sealed class GameServiceTests
         var svc = new GameService(repo, new CardCatalog());
         var game = svc.StartGame("Alice");
 
+        var catalog = new CardCatalog();
+
         // Place two settlements with known capacities
-        var land1 = LandCard.Create("land_plains");
-        var land2 = LandCard.Create("land_forest");
+        var land1 = LandCard.Create((LandDefinition)catalog.Get("land_plains"));
+        var land2 = LandCard.Create((LandDefinition)catalog.Get("land_forest"));
         var set1 = new BuildingCard { DefinitionId = "building_settlement", PopulationCapacity = 20 };
         var set2 = new BuildingCard { DefinitionId = "building_settlement", PopulationCapacity = 15 };
         game.Hand.AddRange(new CardBase[] { land1, land2, set1, set2 });
@@ -1171,7 +1184,7 @@ public sealed class GameServiceTests
         var game = svc.StartGame("Alice");
 
         // Place a settlement with low capacity
-        var land = LandCard.Create("land_plains");
+        var land = LandCard.Create((LandDefinition)new CardCatalog().Get("land_plains"));
         var settlement = new BuildingCard { DefinitionId = "building_settlement", PopulationCapacity = 3 };
         game.Hand.AddRange(new CardBase[] { land, settlement });
         repo.Save(game);
