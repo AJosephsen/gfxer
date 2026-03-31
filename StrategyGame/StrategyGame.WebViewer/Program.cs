@@ -78,8 +78,7 @@ app.MapGet("/api/catalog", () =>
           production = b.Production.ToDictionary(includeZeroKnown: false),
           upkeep = b.Upkeep.ToDictionary(includeZeroKnown: false),
           playCost = b.PlayCost.ToDictionary(includeZeroKnown: false),
-            fluxCost = b.FluxCost,
-          investCost = b.InvestCost.ToDictionary(includeZeroKnown: false)
+            fluxCost = b.FluxCost
         },
         LandDefinition l => new
         {
@@ -92,8 +91,7 @@ app.MapGet("/api/catalog", () =>
           hasCardArt = HasAsset("Cards", l.Id),
           hasLandArt = HasAsset("Lands", l.Id),
             terrain = l.Terrain.ToString(),
-            fluxCost = (int?)l.FluxCost,
-          investCost = l.InvestCost.ToDictionary(includeZeroKnown: false)
+            fluxCost = (int?)l.FluxCost
         } as object,
         _ => new { id = d.Id, type = "unknown", name = d.Name }
     }).ToList();

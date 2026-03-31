@@ -145,29 +145,6 @@ public sealed class McpToolIntegrationTests
         Assert.Contains(updated.DiscardPile, c => c.InstanceId == card.InstanceId);
     }
 
-    // ── get_market / invest ──────────────────────────────────────────────────
-
-    [Fact]
-    public void GetMarket_ListsAvailableCards()
-    {
-        var svc = CreateService();
-        var game = svc.StartGame("Alice");
-        var output = MarketTools.GetMarket(svc, game.GameId);
-        Assert.Contains("Available investments", output);
-        Assert.Contains("Your resources", output);
-    }
-
-    [Fact]
-    public void Invest_AddsCardToHand()
-    {
-        var svc = CreateService();
-        var game = svc.StartGame("Alice");
-        var output = MarketTools.Invest(svc, game.GameId, "building_settlement");
-        Assert.Contains("Invested", output);
-        var updated = svc.LoadGame(game.GameId);
-        Assert.Equal(5, updated.Hand.Count);
-    }
-
     // ── play_card ────────────────────────────────────────────────────────────
 
     [Fact]

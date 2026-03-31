@@ -24,9 +24,6 @@ public abstract record CardDefinition
     public bool EnabledInGame { get; init; } = true;
     public PlacementRequirements PlacementRequirements { get; init; } = new();
 
-    /// <summary>Resources required to acquire this card from the market.</summary>
-    public ResourceAmount InvestCost { get; init; } = ResourceAmount.Zero;
-
     /// <summary>
     /// Flux spent when playing this card from hand onto the board.
     /// Default is 3 for all card types.

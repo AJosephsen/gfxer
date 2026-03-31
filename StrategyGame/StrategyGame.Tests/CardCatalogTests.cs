@@ -46,18 +46,6 @@ public sealed class CardCatalogTests
     }
 
     [Fact]
-    public void Invest_RejectsPrototypeOnlyDefinition()
-    {
-        var service = new GameService(new InMemoryGameRepository(), new CardCatalog());
-        var game = service.StartGame("Alice");
-
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            service.Invest(game.GameId, "example_building_settlement_l2"));
-
-        Assert.Contains("prototype/example definition", ex.Message, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
     public void PlayCard_Upgrade_ReplacesTargetBuildingWhenRequirementsMet()
     {
         var repo = new InMemoryGameRepository();

@@ -8,7 +8,7 @@ using StrategyGame.Core.Models.Game;
 namespace StrategyGame.Core.Services;
 
 /// <summary>
-/// All game logic: creating games, playing cards, investing, ending rounds.
+/// All game logic: creating games, playing cards, ending rounds.
 /// Loads and saves via GameRepository; resolves card rules via CardCatalog.
 /// </summary>
 public sealed class GameService(IGameRepository repo, CardCatalog catalog)
@@ -237,39 +237,6 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var message = $"Drew {drawn.Name} from the map deck (id: {newCard.InstanceId}). " +
                       $"Fertility ×{newCard.Fertility / 10.0:0.0}, Play cost: {newCard.FluxCost} Flux. " +
                       $"Spent: {ResourceAmount.DrawCardFluxCost} Flux.";
-        return (game, message);
-    }
-
-    // ── Investment / market ─────────────────────────────────────────────────
-
-    public (GameState game, string message) Invest(string gameId, string cardDefinitionId)
-    {
-        var game = repo.Load(gameId);
-        var def = catalog.Get(cardDefinitionId);
-
-        if (!def.EnabledInGame)
-            throw new InvalidOperationException(
-                $"{def.Name} is a prototype/example definition and cannot be invested in during live play.");
-
-        if (game.Hand.Count >= ResourceAmount.MaxHandSize)
-            throw new InvalidOperationException(
-                $"Hand is full ({ResourceAmount.MaxHandSize}/{ResourceAmount.MaxHandSize}). Discard a card first using discard_card.");
-
-        if (!game.Resources.CanAfford(def.InvestCost))
-            throw new InvalidOperationException(
-                $"Cannot afford {def.Name}. Need: {def.InvestCost}, Have: {game.Resources}.");
-
-        game.Resources = game.Resources.Subtract(def.InvestCost);
-
-        CardBase newCard = def is LandDefinition landDef
-            ? LandCard.Create(landDef)
-            : BuildingCard.Create(cardDefinitionId, def.Level);
-
-        game.Hand.Add(newCard);
-        game.LastPlayedAt = DateTimeOffset.UtcNow;
-        repo.Save(game);
-
-        var message = $"Invested in {def.Name}. Paid: {def.InvestCost}. Card added to hand (ID: {newCard.InstanceId}).";
         return (game, message);
     }
 
@@ -503,7 +470,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var sb = new StringBuilder();
         if (game.Hand.Count == 0)
         {
-            sb.AppendLine($"Hand (0/{ResourceAmount.MaxHandSize} cards) — empty. Use invest or draw_card to get cards.");
+            sb.AppendLine($"Hand (0/{ResourceAmount.MaxHandSize} cards) — empty. Use draw_card to get cards.");
             if (game.DiscardPile.Count > 0)
                 sb.Append($"Discard pile: {game.DiscardPile.Count} card{(game.DiscardPile.Count != 1 ? "s" : "")}.");
             return sb.ToString().TrimEnd();
@@ -547,36 +514,6 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
             sb.Append($"Discard pile: {game.DiscardPile.Count} card{(game.DiscardPile.Count != 1 ? "s" : "")}.");
         }
 
-        return sb.ToString().TrimEnd();
-    }
-
-    public string RenderMarket(GameState game)
-    {
-        var sb = new StringBuilder();
-        sb.AppendLine($"Your resources: {game.Resources}");
-        sb.AppendLine();
-        sb.AppendLine("Available investments:");
-
-        foreach (var def in catalog.AllPlayable.OrderBy(d => d.Id))
-        {
-            var canAfford = game.Resources.CanAfford(def.InvestCost) ? "✓" : "✗";
-            sb.AppendLine();
-            sb.AppendLine($"  {canAfford} [{def.Id}]  {def.Name}  — Cost: {(def.InvestCost.IsEmpty ? "free" : def.InvestCost.ToString())}");
-            sb.AppendLine($"    {def.Description}");
-
-            if (def is BuildingDefinition bDef)
-            {
-                var playCostStr = bDef.PlayCost.IsEmpty ? "" : $" + {bDef.PlayCost}";
-                sb.AppendLine($"    Place cost: {def.FluxCost} Flux{playCostStr}");
-                if (bDef.Occupies > 0) sb.AppendLine($"    Workers:    0–{bDef.Occupies} (round-robin, scales production)");
-                if (!bDef.Production.IsEmpty) sb.AppendLine($"    Max prod:   {bDef.Production}/round (at full workers)");
-                if (!bDef.Upkeep.IsEmpty)     sb.AppendLine($"    Upkeep:     {bDef.Upkeep}/round");
-            }
-            else
-            {
-                sb.AppendLine($"    Place cost: {def.FluxCost} Flux");
-            }
-        }
         return sb.ToString().TrimEnd();
     }
 

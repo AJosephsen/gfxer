@@ -576,7 +576,8 @@ public sealed class GameServiceTests
     [Fact]
     public void PlayCard_Settlement_FailsIfCellAlreadyHasBuilding()
     {
-        var svc = CreateService();
+        var repo = new InMemoryGameRepository();
+        var svc = new GameService(repo, new CardCatalog());
         var game = svc.StartGame("Alice");
         var landCard = game.Hand.OfType<LandCard>().First();
         svc.PlayCard(game.GameId, landCard.InstanceId, 0, 0);
@@ -584,60 +585,13 @@ public sealed class GameServiceTests
         var settlement = game2.Hand.OfType<BuildingCard>()
             .First(c => c.DefinitionId == "building_settlement");
         svc.PlayCard(game.GameId, settlement.InstanceId, 0, 0);
-        // Invest a second settlement and try to place it in the same spot
-        var (afterInvest, _) = svc.Invest(game.GameId, "building_settlement");
-        var secondSettlement = afterInvest.Hand.OfType<BuildingCard>()
-            .Last(c => c.DefinitionId == "building_settlement");
+        // Add a second settlement to hand directly and try to place it in the same spot
+        var game3 = svc.LoadGame(game.GameId);
+        var secondSettlement = new BuildingCard { DefinitionId = "building_settlement" };
+        game3.Hand.Add(secondSettlement);
+        repo.Save(game3);
         Assert.Throws<InvalidOperationException>(() =>
             svc.PlayCard(game.GameId, secondSettlement.InstanceId, 0, 0));
-    }
-
-    // ── Invest ──────────────────────────────────────────────────────────────
-
-    [Fact]
-    public void Invest_AddsBuildingCardToHand()
-    {
-        var svc = CreateService();
-        var game = svc.StartGame("Alice");
-        var handSizeBefore = game.Hand.Count;
-        var (updated, _) = svc.Invest(game.GameId, "building_settlement");
-        Assert.Equal(handSizeBefore + 1, updated.Hand.Count);
-        Assert.Contains(updated.Hand, c => c.DefinitionId == "building_settlement");
-    }
-
-    [Fact]
-    public void Invest_ConsumesResources()
-    {
-        var svc = CreateService();
-        var game = svc.StartGame("Alice");
-        var catalog = new CardCatalog();
-        var def = catalog.Get("building_settlement");
-        var foodBefore = game.Resources.Food;
-        var peopleBefore = game.Resources.People;
-        var (updated, _) = svc.Invest(game.GameId, "building_settlement");
-        Assert.Equal(foodBefore - def.InvestCost.Food, updated.Resources.Food);
-        Assert.Equal(peopleBefore - def.InvestCost.People, updated.Resources.People);
-    }
-
-    [Fact]
-    public void Invest_ThrowsWhenCantAfford()
-    {
-        var repo = new InMemoryGameRepository();
-        var svc = new GameService(repo, new CardCatalog());
-        var game = svc.StartGame("Alice");
-        game.Resources = game.Resources with { Food = 0, People = 0 };
-        repo.Save(game);
-        Assert.Throws<InvalidOperationException>(() =>
-            svc.Invest(game.GameId, "building_settlement"));
-    }
-
-    [Fact]
-    public void Invest_AddsLandCardToHand()
-    {
-        var svc = CreateService();
-        var game = svc.StartGame("Alice");
-        var (updated, _) = svc.Invest(game.GameId, "land_plains");
-        Assert.Contains(updated.Hand.OfType<LandCard>(), c => c.DefinitionId == "land_plains");
     }
 
     // ── EndRound ────────────────────────────────────────────────────────────
@@ -742,18 +696,6 @@ public sealed class GameServiceTests
             game.Hand.Add(new LandCard { DefinitionId = "land_plains" });
         repo.Save(game);
         Assert.Throws<InvalidOperationException>(() => svc.DrawFromDeck(game.GameId));
-    }
-
-    [Fact]
-    public void Invest_ThrowsWhenHandFull()
-    {
-        var repo = new InMemoryGameRepository();
-        var svc = new GameService(repo, new CardCatalog());
-        var game = svc.StartGame("Alice");
-        while (game.Hand.Count < ResourceAmount.MaxHandSize)
-            game.Hand.Add(new LandCard { DefinitionId = "land_plains" });
-        repo.Save(game);
-        Assert.Throws<InvalidOperationException>(() => svc.Invest(game.GameId, "land_plains"));
     }
 
     // ── Discard ─────────────────────────────────────────────────────────────

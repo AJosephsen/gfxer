@@ -20,7 +20,6 @@
       "tags": ["terrain:forest", "buildable"],
       "terrain": "Forest",
       "fluxCost": 3,
-      "investCost": { "food": 2, "people": 0 },
       "statRanges": {
         "fertility": { "min": 5, "max": 15 },
         "fluxScale": { "min": 5, "max": 12 }
@@ -35,7 +34,6 @@
       "tags": ["terrain:plains", "buildable", "agricultural"],
       "terrain": "Plains",
       "fluxCost": 3,
-      "investCost": { "food": 2, "people": 0 },
       "statRanges": {
         "fertility": { "min": 7, "max": 15 },
         "fluxScale": { "min": 5, "max": 10 }
@@ -50,7 +48,6 @@
       "tags": ["terrain:hill", "buildable", "defensive"],
       "terrain": "Hill",
       "fluxCost": 3,
-      "investCost": { "food": 2, "people": 0 },
       "statRanges": {
         "fertility": { "min": 3, "max": 12 },
         "fluxScale": { "min": 6, "max": 14 }
@@ -65,7 +62,6 @@
       "tags": ["terrain:beach", "buildable", "coastal"],
       "terrain": "Beach",
       "fluxCost": 3,
-      "investCost": { "food": 2, "people": 0 },
       "statRanges": {
         "fertility": { "min": 4, "max": 12 },
         "fluxScale": { "min": 5, "max": 11 }
@@ -80,7 +76,6 @@
       "tags": ["terrain:wasteland"],
       "terrain": "Wasteland",
       "fluxCost": 3,
-      "investCost": { "food": 2, "people": 0 },
       "statRanges": {
         "fertility": { "min": 1, "max": 5 },
         "fluxScale": { "min": 8, "max": 15 }
@@ -99,8 +94,7 @@
       "fluxCost": 4,
       "playCost": { "food": 0 },
       "upkeep":   { "food": 1, "people": 0 },
-      "production": { "food": 0, "people": 2 },
-      "investCost": { "food": 2, "people": 2 }
+      "production": { "food": 0, "people": 2 }
     },
     {
       "type": "building",
@@ -115,8 +109,7 @@
       "fluxCost": 4,
       "playCost": { "food": 0, "wood": 10 },
       "upkeep":   { "food": 0 },
-      "production": { "food": 6, "people": 0 },
-      "investCost": { "food": 0, "people": 3 }
+      "production": { "food": 6, "people": 0 }
     },
     {
       "type": "building",
@@ -131,8 +124,7 @@
       "fluxCost": 4,
       "playCost": { "food": 0 },
       "upkeep":   { "food": 0, "people": 0 },
-      "production": { "food": 0, "people": 0, "wood": 4 },
-      "investCost": { "food": 3, "people": 0 }
+      "production": { "food": 0, "people": 0, "wood": 4 }
     },
     {
       "type": "building",
@@ -147,8 +139,7 @@
       "fluxCost": 4,
       "playCost": { "food": 0 },
       "upkeep":   { "food": 0, "people": 0 },
-      "production": { "food": 4, "people": 0 },
-      "investCost": { "food": 2, "people": 0 }
+      "production": { "food": 4, "people": 0 }
     },
     {
       "type": "building",
@@ -163,8 +154,7 @@
       "fluxCost": 4,
       "playCost": { "food": 0 },
       "upkeep":   { "food": 0, "people": 0 },
-      "production": { "food": 4, "people": 0 },
-      "investCost": { "food": 2, "people": 0 }
+      "production": { "food": 4, "people": 0 }
     },
     {
       "type": "land",
@@ -175,8 +165,7 @@
       "level": 1,
       "tags": ["terrain:plains", "buildable", "agricultural"],
       "terrain": "Plains",
-      "fluxCost": 3,
-      "investCost": { "food": 0, "people": 0 }
+      "fluxCost": 3
     },
     {
       "type": "building",
@@ -195,8 +184,7 @@
       "fluxCost": 4,
       "playCost": { "food": 0, "wood": 20 },
       "upkeep": { "food": 1, "people": 0 },
-      "production": { "food": 1, "people": 2 },
-      "investCost": { "food": 0, "people": 0 }
+      "production": { "food": 1, "people": 2 }
     },
     {
       "type": "building",
@@ -223,8 +211,7 @@
       "fluxCost": 5,
       "playCost": { "food": 0, "wood": 40 },
       "upkeep": { "food": 2, "people": 0 },
-      "production": { "food": 2, "people": 4 },
-      "investCost": { "food": 0, "people": 0 }
+      "production": { "food": 2, "people": 4 }
     }
   ]
 }
