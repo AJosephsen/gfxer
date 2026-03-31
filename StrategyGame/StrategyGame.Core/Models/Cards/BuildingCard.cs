@@ -26,9 +26,10 @@ public sealed class BuildingCard : CardBase
     public int PopulationCapacity { get; init; } = 0;
 
     /// <summary>Create a new building card, rolling stats where applicable.</summary>
-    public static BuildingCard Create(string definitionId) => new()
+    public static BuildingCard Create(string definitionId, int level = 1) => new()
     {
         DefinitionId = definitionId,
+        Level = level,
         PopulationCapacity = definitionId == "building_settlement"
             ? 10 + Random.Shared.Next(31)  // 10–40
             : 0,

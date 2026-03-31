@@ -10,7 +10,8 @@ This document defines the data model that drives all game content. The design is
 - **Implicit technology existence**: any technology ID referenced in a placement requirement implies that technology is a dimension that can be leveled up.
 - **Tag-based compatibility**: cards do not hardcode terrain names. They declare tags they require; cells declare tags they satisfy. Matching is done at runtime.
 - **Uniform card schema**: all card types (land, building, event, army, tech, infrastructure) share the same base schema. Type-specific fields are additive.
-- **Levels on all cards**: every card starts at level 1 and can be upgraded. Level affects capacity, production, and requirement thresholds.
+- **Levels on all cards**: every card instance has a level, starts at level 1, and can be advanced by upgrade cards or other mechanics.
+- **Upgrades are cards too**: a level 2 building is best represented as a new card definition that inherits from a lower-level card and overrides only the changed fields.
 
 ---
 
@@ -127,6 +128,29 @@ All cards — land tiles, buildings, events, army units, infrastructure, tech no
 | `description` | string  | Flavour text and gameplay note |
 | `art`         | string  | Art asset path |
 | `fluxCost`    | integer | Flux spent to play this card |
+| `inheritsFrom`| string  | Optional base definition ID to inherit from |
+
+### Inheritance and upgrade cards
+
+Instead of hardcoding a special "settlement level 2" rule in code, the catalog can define a second card that inherits from the first one.
+
+```json
+{
+  "id": "settlement-l2-upgrade",
+  "inheritsFrom": "settlement-l1",
+  "type": "building-upgrade",
+  "level": 2
+}
+```
+
+Inheritance means:
+
+- The child card starts with all fields from the parent definition.
+- Any field present in the child overrides the parent value.
+- Map-like fields such as `placementCost`, `production`, `upkeep`, and `technology` should merge by key.
+- Arrays such as `tags` should normally merge uniquely, unless an explicit replacement mode is introduced later.
+
+This allows a settlement level 2 card to reuse all level 1 behavior while only redefining the parts that change.
 
 ### Placement cost
 
@@ -143,6 +167,10 @@ Any resource ID is valid. The engine charges these resources when the card is pl
 ```json
 "placementRequirements": {
   "cellTags": ["<tagId>", ...],
+  "targetCard": {
+    "definitionId": "<cardId>",
+    "minLevel": 1
+  },
   "technology": {
     "<techId>": <minLevel>
   }
@@ -153,6 +181,7 @@ Any resource ID is valid. The engine charges these resources when the card is pl
 |--------------|-------------|
 | `cellTags`   | The target cell must have **at least one** matching tag (OR logic). Use `cellTagsAll` for AND. |
 | `cellTagsAll`| The target cell must have **all** listed tags. |
+| `targetCard` | Optional requirement that the cell already contains a specific card definition, optionally at a minimum level. Useful for upgrades. |
 | `technology` | Each listed tech must be at or above the specified level in the player's state. |
 
 ### Workers
@@ -231,6 +260,31 @@ Additional fields: `fertility` (base multiplier ×0.1 per unit, so 9 = ×0.9), `
 ### Building card
 
 Placed on a cell that already has a land card. Adds its tags to the cell and produces resources each round.
+
+### Upgrade card
+
+Upgrade cards are normal card definitions with extra placement requirements that target existing cards on a cell.
+
+```json
+{
+  "type": "building-upgrade",
+  "inheritsFrom": "settlement-l1",
+  "placementRequirements": {
+    "cellTags": ["settlement"],
+    "targetCard": {
+      "definitionId": "settlement-l1",
+      "minLevel": 1
+    }
+  }
+}
+```
+
+When played, an upgrade card can either:
+
+- replace the current top building definition on the cell, or
+- attach as an upgrade layer that modifies the underlying building.
+
+The simpler first implementation is replacement: the instance keeps its runtime identity, but its effective definition becomes the upgrade card definition.
 
 ### Event card (luck / unluck)
 
@@ -325,6 +379,121 @@ When a card is played it becomes a **card instance** on the board or in state. T
 ```
 
 Technology levels are checked against `placementRequirements.technology` when a card is played. Levels increase through tech-tree cards, research facilities, or round milestones.
+
+---
+
+## Worked examples
+
+These examples show the intended modeling style: land is a normal card, settlement level 1 is a normal building card, and settlement level 2 is another card that inherits from level 1 and is placed as an upgrade.
+
+### Plains card
+
+```json
+{
+  "id": "plains",
+  "name": "Plains",
+  "type": "land",
+  "level": 1,
+  "tags": ["terrain:plains", "buildable", "agricultural"],
+  "description": "Open fertile land suited to farming and settlement.",
+  "art": "plains.webp",
+  "fluxCost": 3,
+  "placementCost": {},
+  "placementRequirements": {},
+  "fertility": 10,
+  "accessibilityCost": 8,
+  "production": {},
+  "upkeep": {}
+}
+```
+
+### Settlement level 1 card
+
+```json
+{
+  "id": "settlement-l1",
+  "name": "Settlement",
+  "type": "building",
+  "level": 1,
+  "tags": ["settlement", "population-center"],
+  "description": "A basic settlement that houses people and produces small local output.",
+  "art": "settlement.webp",
+  "fluxCost": 4,
+  "placementCost": {
+    "wood": 20,
+    "gold": 10
+  },
+  "placementRequirements": {
+    "cellTags": ["terrain:plains", "terrain:forest", "terrain:hill", "terrain:beach"]
+  },
+  "workers": {
+    "min": 0,
+    "max": 2
+  },
+  "production": {
+    "people": 2,
+    "food": 1
+  },
+  "upkeep": {
+    "food": 1
+  },
+  "levelScaling": {
+    "production": {
+      "people": 1
+    }
+  }
+}
+```
+
+### Settlement level 2 upgrade card
+
+```json
+{
+  "id": "settlement-l2-upgrade",
+  "name": "Settlement II",
+  "type": "building-upgrade",
+  "inheritsFrom": "settlement-l1",
+  "level": 2,
+  "tags": ["settlement-upgrade"],
+  "description": "Expands a basic settlement into a larger organized town.",
+  "art": "settlement-l2.webp",
+  "fluxCost": 5,
+  "placementCost": {
+    "wood": 40,
+    "bricks": 20,
+    "gold": 30
+  },
+  "placementRequirements": {
+    "cellTags": ["settlement"],
+    "targetCard": {
+      "definitionId": "settlement-l1",
+      "minLevel": 1
+    },
+    "technology": {
+      "governance": 2
+    }
+  },
+  "workers": {
+    "min": 0,
+    "max": 4
+  },
+  "production": {
+    "people": 4,
+    "food": 2,
+    "gold": 1
+  },
+  "upkeep": {
+    "food": 2,
+    "gold": 1
+  }
+}
+```
+
+This example means:
+
+- `settlement-l2-upgrade` automatically inherits any fields not restated from `settlement-l1`.
+- It can only be played on a cell that already satisfies the `settlement` tag and contains a `settlement-l1` target.
+- The level 2 behavior is fully configurable in data, without special-purpose code for settlements.
 
 ---
 

@@ -18,6 +18,11 @@ public abstract record CardDefinition
     public required string Id { get; init; }
     public required string Name { get; init; }
     public required string Description { get; init; }
+    public int Level { get; init; } = 1;
+    public string[] Tags { get; init; } = [];
+    public string? InheritsFrom { get; init; }
+    public bool EnabledInGame { get; init; } = true;
+    public PlacementRequirements PlacementRequirements { get; init; } = new();
 
     /// <summary>Resources required to acquire this card from the market.</summary>
     public ResourceAmount InvestCost { get; init; } = ResourceAmount.Zero;
@@ -59,6 +64,20 @@ public sealed record BuildingDefinition : CardDefinition
     public bool CanBuildOn(TerrainType terrain) =>
         terrain != TerrainType.Wasteland &&
         (AllowedTerrains.Length == 0 || AllowedTerrains.Contains(terrain));
+}
+
+public sealed record PlacementRequirements
+{
+    public string[] CellTags { get; init; } = [];
+    public string[] CellTagsAll { get; init; } = [];
+    public TargetCardRequirement? TargetCard { get; init; }
+    public Dictionary<string, int> Technology { get; init; } = [];
+}
+
+public sealed record TargetCardRequirement
+{
+    public string? DefinitionId { get; init; }
+    public int MinLevel { get; init; } = 1;
 }
 
 /// <summary>Converts a JSON string array of terrain names to TerrainType[].</summary>

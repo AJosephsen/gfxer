@@ -54,7 +54,7 @@ app.MapGet("/api/games/{gameId}", (string gameId) =>
 // Get the card catalog (definitions for rendering)
 app.MapGet("/api/catalog", () =>
 {
-    var defs = catalog.All.Select<CardDefinition, object>(d => d switch
+  var defs = catalog.AllPlayable.Select<CardDefinition, object>(d => d switch
     {
         BuildingDefinition b => new
         {
@@ -62,6 +62,8 @@ app.MapGet("/api/catalog", () =>
             type = "building",
             name = b.Name,
             description = b.Description,
+      level = b.Level,
+      tags = b.Tags,
             buildingType = b.BuildingType.ToString(),
             allowedTerrains = b.AllowedTerrains.Select(t => t.ToString()).ToArray(),
             occupies = b.Occupies,
@@ -77,6 +79,8 @@ app.MapGet("/api/catalog", () =>
             type = "land",
             name = l.Name,
             description = l.Description,
+          level = l.Level,
+          tags = l.Tags,
             terrain = l.Terrain.ToString(),
             fluxCost = (int?)l.FluxCost,
             investCost = new { food = l.InvestCost.Food, people = l.InvestCost.People, wood = l.InvestCost.Wood }

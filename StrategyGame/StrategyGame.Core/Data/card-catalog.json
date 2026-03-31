@@ -5,6 +5,8 @@
       "id": "land_forest",
       "name": "Forest",
       "description": "Dense woodland. Suitable terrain for most buildings.",
+      "level": 1,
+      "tags": ["terrain:forest", "buildable"],
       "terrain": "Forest",
       "fluxCost": 3,
       "investCost": { "food": 2, "people": 0 }
@@ -14,6 +16,8 @@
       "id": "land_plains",
       "name": "Plains",
       "description": "Open grassland. Ideal for farming.",
+      "level": 1,
+      "tags": ["terrain:plains", "buildable", "agricultural"],
       "terrain": "Plains",
       "fluxCost": 3,
       "investCost": { "food": 2, "people": 0 }
@@ -23,6 +27,8 @@
       "id": "land_hill",
       "name": "Hill",
       "description": "Rocky elevated terrain. Hard to farm but defensible.",
+      "level": 1,
+      "tags": ["terrain:hill", "buildable", "defensive"],
       "terrain": "Hill",
       "fluxCost": 3,
       "investCost": { "food": 2, "people": 0 }
@@ -32,6 +38,8 @@
       "id": "land_beach",
       "name": "Beach",
       "description": "Sandy coastal terrain. Good for trade routes.",
+      "level": 1,
+      "tags": ["terrain:beach", "buildable", "coastal"],
       "terrain": "Beach",
       "fluxCost": 3,
       "investCost": { "food": 2, "people": 0 }
@@ -41,6 +49,8 @@
       "id": "land_wasteland",
       "name": "Wasteland",
       "description": "Barren, desolate terrain. Nothing can be built here.",
+      "level": 1,
+      "tags": ["terrain:wasteland"],
       "terrain": "Wasteland",
       "fluxCost": 3,
       "investCost": { "food": 2, "people": 0 }
@@ -50,6 +60,8 @@
       "id": "building_settlement",
       "name": "Settlement",
       "description": "A small community of settlers. Produces people each round but needs food to sustain.",
+      "level": 1,
+      "tags": ["settlement", "population-center"],
       "buildingType": "Settlement",
       "allowedTerrains": [],
       "occupies": 0,
@@ -64,6 +76,8 @@
       "id": "building_farm",
       "name": "Farm",
       "description": "Agricultural fields tended by your people. Produces up to 6 food per round depending on how many people are working it.",
+      "level": 1,
+      "tags": ["agriculture"],
       "buildingType": "Farm",
       "allowedTerrains": ["Plains"],
       "occupies": 3,
@@ -78,6 +92,8 @@
       "id": "building_lumber_camp",
       "name": "Lumber Camp",
       "description": "Woodcutters harvest timber from nearby forest. Produces up to 4 wood per round depending on how many people are working it.",
+      "level": 1,
+      "tags": ["industry", "wood"],
       "buildingType": "LumberCamp",
       "allowedTerrains": ["Forest"],
       "occupies": 2,
@@ -92,6 +108,8 @@
       "id": "building_fishing_camp",
       "name": "Fishing Camp",
       "description": "Fishermen work the coastline. Produces up to 4 food per round depending on how many people are working it.",
+      "level": 1,
+      "tags": ["food", "coastal"],
       "buildingType": "FishingCamp",
       "allowedTerrains": ["Beach"],
       "occupies": 2,
@@ -106,6 +124,8 @@
       "id": "building_sheep_pasture",
       "name": "Sheep Pasture",
       "description": "Shepherds tend flocks on rocky hillsides. Produces up to 4 food per round depending on how many people are working it.",
+      "level": 1,
+      "tags": ["food", "pasture"],
       "buildingType": "SheepPasture",
       "allowedTerrains": ["Hill"],
       "occupies": 2,
@@ -114,6 +134,66 @@
       "upkeep":   { "food": 0, "people": 0 },
       "production": { "food": 4, "people": 0 },
       "investCost": { "food": 2, "people": 0 }
+    },
+    {
+      "type": "land",
+      "id": "example_land_plains",
+      "name": "Plains (Example)",
+      "description": "Prototype example entry used to validate the data-driven schema.",
+      "enabledInGame": false,
+      "level": 1,
+      "tags": ["terrain:plains", "buildable", "agricultural"],
+      "terrain": "Plains",
+      "fluxCost": 3,
+      "investCost": { "food": 0, "people": 0 }
+    },
+    {
+      "type": "building",
+      "id": "example_building_settlement_l1",
+      "name": "Settlement I (Example)",
+      "description": "Prototype example for a level 1 settlement definition.",
+      "enabledInGame": false,
+      "level": 1,
+      "tags": ["settlement", "population-center"],
+      "buildingType": "Settlement",
+      "allowedTerrains": ["Plains", "Forest", "Hill", "Beach"],
+      "placementRequirements": {
+        "cellTags": ["terrain:plains", "terrain:forest", "terrain:hill", "terrain:beach"]
+      },
+      "occupies": 0,
+      "fluxCost": 4,
+      "playCost": { "food": 0, "wood": 20 },
+      "upkeep": { "food": 1, "people": 0 },
+      "production": { "food": 1, "people": 2 },
+      "investCost": { "food": 0, "people": 0 }
+    },
+    {
+      "type": "building",
+      "id": "example_building_settlement_l2",
+      "name": "Settlement II (Example)",
+      "description": "Prototype example for a level 2 settlement upgrade.",
+      "enabledInGame": false,
+      "inheritsFrom": "example_building_settlement_l1",
+      "level": 2,
+      "tags": ["settlement-upgrade"],
+      "buildingType": "Settlement",
+      "allowedTerrains": ["Plains", "Forest", "Hill", "Beach"],
+      "placementRequirements": {
+        "cellTags": ["settlement"],
+        "targetCard": {
+          "definitionId": "example_building_settlement_l1",
+          "minLevel": 1
+        },
+        "technology": {
+          "governance": 2
+        }
+      },
+      "occupies": 0,
+      "fluxCost": 5,
+      "playCost": { "food": 0, "wood": 40 },
+      "upkeep": { "food": 2, "people": 0 },
+      "production": { "food": 2, "people": 4 },
+      "investCost": { "food": 0, "people": 0 }
     }
   ]
 }

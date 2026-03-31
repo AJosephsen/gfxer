@@ -29,8 +29,14 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
         // Starting hand: 3 random useful land cards + 1 Settlement (no wastelands in opening hand)
         for (int i = 0; i < 3; i++)
-            game.Hand.Add(LandCard.Create(usableLandIds[Random.Shared.Next(usableLandIds.Length)]));
-        game.Hand.Add(BuildingCard.Create("building_settlement"));
+        {
+            var landId = usableLandIds[Random.Shared.Next(usableLandIds.Length)];
+            var landDef = catalog.Get(landId);
+            game.Hand.Add(LandCard.Create(landId, landDef.Level));
+        }
+
+        var settlementDef = catalog.Get("building_settlement");
+        game.Hand.Add(BuildingCard.Create("building_settlement", settlementDef.Level));
 
         // Pre-shuffle 500-card land deck (15 cards burned per round → ~33 rounds max)
         // 30% of cards are wastelands (useless filler)
@@ -216,6 +222,10 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var game = repo.Load(gameId);
         var def = catalog.Get(cardDefinitionId);
 
+        if (!def.EnabledInGame)
+            throw new InvalidOperationException(
+                $"{def.Name} is a prototype/example definition and cannot be invested in during live play.");
+
         if (game.Hand.Count >= ResourceAmount.MaxHandSize)
             throw new InvalidOperationException(
                 $"Hand is full ({ResourceAmount.MaxHandSize}/{ResourceAmount.MaxHandSize}). Discard a card first using discard_card.");
@@ -227,8 +237,8 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         game.Resources = game.Resources.Subtract(def.InvestCost);
 
         CardBase newCard = def is LandDefinition
-            ? LandCard.Create(cardDefinitionId)
-            : BuildingCard.Create(cardDefinitionId);
+            ? LandCard.Create(cardDefinitionId, def.Level)
+            : BuildingCard.Create(cardDefinitionId, def.Level);
 
         game.Hand.Add(newCard);
         game.LastPlayedAt = DateTimeOffset.UtcNow;
@@ -525,7 +535,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         sb.AppendLine();
         sb.AppendLine("Available investments:");
 
-        foreach (var def in catalog.All.OrderBy(d => d.Id))
+        foreach (var def in catalog.AllPlayable.OrderBy(d => d.Id))
         {
             var canAfford = game.Resources.CanAfford(def.InvestCost) ? "✓" : "✗";
             sb.AppendLine();

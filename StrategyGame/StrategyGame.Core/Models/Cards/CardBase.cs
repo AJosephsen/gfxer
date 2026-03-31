@@ -16,4 +16,7 @@ public abstract class CardBase
 
     /// <summary>Foreign key into CardCatalog (e.g. "land_forest", "building_farm").</summary>
     public required string DefinitionId { get; init; }
+
+    /// <summary>Current level of this specific card instance. Starts from the definition's base level.</summary>
+    public int Level { get; set; } = 1;
 }

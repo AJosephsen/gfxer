@@ -21,9 +21,10 @@ public sealed class LandCard : CardBase
     public int AccessibilityCost { get; init; } = 10;
 
     /// <summary>Create a new land card with randomly rolled stats.</summary>
-    public static LandCard Create(string definitionId) => new()
+    public static LandCard Create(string definitionId, int level = 1) => new()
     {
         DefinitionId = definitionId,
+        Level = level,
         Fertility        = 5 + Random.Shared.Next(6) + Random.Shared.Next(6), // 5–15
         AccessibilityCost = 5 + Random.Shared.Next(5) + Random.Shared.Next(4), // 5–12
     };
