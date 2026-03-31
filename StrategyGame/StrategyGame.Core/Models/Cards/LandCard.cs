@@ -29,6 +29,15 @@ public sealed class LandCard : CardBase
         AccessibilityCost = 5 + Random.Shared.Next(5) + Random.Shared.Next(4), // 5–12
     };
 
+    /// <summary>Create an Empty land card (placeholder for unclaimed board slots).</summary>
+    public static LandCard CreateEmpty() => new()
+    {
+        DefinitionId = "land_empty",
+        Level = 1,
+        Fertility = 0,
+        AccessibilityCost = 0,
+    };
+
     /// <summary>Flux cost to play this card, derived from catalog base × AccessibilityCost.</summary>
     public int ComputeFluxCost(int baseFluxCost) =>
         Math.Max(1, (int)Math.Round(baseFluxCost * AccessibilityCost / 10.0,

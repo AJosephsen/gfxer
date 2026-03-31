@@ -63,7 +63,7 @@ public sealed class CardCatalogTests
         var repo = new InMemoryGameRepository();
         var service = new GameService(repo, new CardCatalog());
         var game = service.StartGame("Alice");
-        var cell = game.Board.AllCells().First(c => !c.IsLocked);
+        var cell = game.Board.AllCells().First(c => c.IsEmpty);
 
         cell.Land = LandCard.Create("land_plains", 1);
         cell.Building = BuildingCard.Create("example_building_settlement_l1", 1);

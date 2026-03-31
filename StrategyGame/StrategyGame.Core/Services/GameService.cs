@@ -127,21 +127,23 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
         if (card is LandCard landCard)
         {
-            if (cell.Land != null)
+            if (!cell.IsEmpty)
                 throw new InvalidOperationException(
-                    $"{describeCell(cell)} already has {catalog.Get(cell.Land.DefinitionId).Name} land. Choose an empty cell.");
+                    cell.Land == null
+                        ? $"{describeCell(cell)} has no land slot. It cannot receive a terrain card."
+                        : $"{describeCell(cell)} already has {catalog.Get(cell.Land.DefinitionId).Name} terrain. Land cards can only replace Empty slots.");
 
             game.Resources = game.Resources.Subtract(fluxCost);
             cell.Land = landCard;
-            game.Board.UnlockAdjacent(cell.Row, cell.Col);
             game.Hand.RemoveAt(idx);
+            ExpandEmptySlots(game.Board, cell);
             message = $"Placed {def.Name} land on {describeCell(cell)}. Spent: {fluxAmount} Flux.";
         }
         else if (card is BuildingCard building)
         {
-            if (cell.Land == null)
+            if (!cell.HasTerrain)
                 throw new InvalidOperationException(
-                    $"{describeCell(cell)} has no land. Play a land card there first.");
+                    $"{describeCell(cell)} has no terrain. Play a land card there first.");
 
             var bDef = (BuildingDefinition)def;
             var landDef = (LandDefinition)catalog.Get(cell.Land.DefinitionId);
@@ -475,22 +477,24 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
         var placedCells = game.Board.AllCells()
             .Where(c => c.Land is not null)
             .ToList();
+        var terrainCells = placedCells.Where(c => c.HasTerrain).ToList();
+        var emptyCells = placedCells.Where(c => c.IsEmpty).ToList();
 
         sb.AppendLine($"Round {game.Round} | {game.PlayerName} | {game.Resources} | Deck: {game.LandDeck.Count} cards | Population: {game.Resources.People}/{popCap} | Workers: {occupied} occupied, {available} available");
         sb.AppendLine();
-        sb.AppendLine($"Board ({placedCells.Count}/{Board.Rows * Board.Cols}):");
+        sb.AppendLine($"Board ({terrainCells.Count} terrain, {emptyCells.Count} empty):");
 
-        if (placedCells.Count == 0)
+        if (terrainCells.Count == 0 && emptyCells.Count == 0)
         {
-            sb.AppendLine("  [next] Empty slot");
+            sb.AppendLine("  No slots available.");
             return sb.ToString().TrimEnd();
         }
 
-        for (int i = 0; i < placedCells.Count; i++)
-            sb.AppendLine($"  [{i + 1}] {RenderCell(placedCells[i])}");
+        for (int i = 0; i < terrainCells.Count; i++)
+            sb.AppendLine($"  [{i + 1}] {RenderCell(terrainCells[i])}");
 
-        if (placedCells.Count < Board.Rows * Board.Cols)
-            sb.AppendLine("  [next] Empty slot");
+        if (emptyCells.Count > 0)
+            sb.AppendLine($"  [{emptyCells.Count}× Empty] Available for terrain cards");
 
         return sb.ToString().TrimEnd();
     }
@@ -600,10 +604,31 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
     private static int GetSlotNumber(BoardCell cell) => cell.Row * Board.Cols + cell.Col + 1;
 
+    /// <summary>
+    /// After placing a terrain card, unlock orthogonally adjacent locked cells
+    /// by giving them Empty land cards so they become available for future placement.
+    /// </summary>
+    private static void ExpandEmptySlots(Board board, BoardCell placed)
+    {
+        int[][] dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+        foreach (var d in dirs)
+        {
+            int nr = placed.Row + d[0], nc = placed.Col + d[1];
+            if (nr < 0 || nr >= Board.Rows || nc < 0 || nc >= Board.Cols)
+                continue;
+            var neighbor = board.GetCell(nr, nc);
+            if (neighbor.IsLocked && neighbor.Land == null)
+            {
+                neighbor.IsLocked = false;
+                neighbor.Land = LandCard.CreateEmpty();
+            }
+        }
+    }
+
     private static BoardCell FindNextLandPlacementCell(GameState game)
     {
         return game.Board.AllCells()
-            .FirstOrDefault(c => !c.IsLocked && c.Land is null)
+            .FirstOrDefault(c => c.IsEmpty)
             ?? throw new InvalidOperationException("No empty board slot is available for a land card.");
     }
 
@@ -611,7 +636,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
     {
         return game.Board.AllCells()
             .Where(c =>
-                c.Land is not null &&
+                c.HasTerrain &&
                 CanPlaceBuildingOnCell(game, c, buildingDefinition))
             .OrderByDescending(c => c.Land!.Fertility)
             .ThenBy(c => c.Row)
@@ -623,7 +648,7 @@ public sealed class GameService(IGameRepository repo, CardCatalog catalog)
 
     private bool CanPlaceBuildingOnCell(GameState game, BoardCell cell, BuildingDefinition buildingDefinition)
     {
-        if (cell.Land is null)
+        if (!cell.HasTerrain)
             return false;
 
         var isUpgrade = buildingDefinition.PlacementRequirements.TargetCard is not null;

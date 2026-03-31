@@ -3,7 +3,7 @@ using StrategyGame.Core.Models;
 
 namespace StrategyGame.Core.Catalog;
 
-public enum TerrainType { Forest, Plains, Hill, Beach, Wasteland }
+public enum TerrainType { Empty, Forest, Plains, Hill, Beach, Wasteland }
 public enum BuildingType { Settlement, Farm, LumberCamp, FishingCamp, SheepPasture }
 
 /// <summary>
@@ -63,6 +63,7 @@ public sealed record BuildingDefinition : CardDefinition
 
     public bool CanBuildOn(TerrainType terrain) =>
         terrain != TerrainType.Wasteland &&
+        terrain != TerrainType.Empty &&
         (AllowedTerrains.Length == 0 || AllowedTerrains.Contains(terrain));
 }
 

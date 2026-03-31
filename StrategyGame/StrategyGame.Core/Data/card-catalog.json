@@ -2,6 +2,17 @@
   "cards": [
     {
       "type": "land",
+      "id": "land_empty",
+      "name": "Empty",
+      "description": "An unclaimed patch of land. Play a terrain card here to develop it.",
+      "level": 1,
+      "enabledInGame": false,
+      "tags": ["terrain:empty"],
+      "terrain": "Empty",
+      "fluxCost": 0
+    },
+    {
+      "type": "land",
       "id": "land_forest",
       "name": "Forest",
       "description": "Dense woodland. Suitable terrain for most buildings.",

@@ -162,7 +162,9 @@ public sealed class GameServiceTests
         // Plant a card with known AccessibilityCost = 5 → cost = round(3 × 0.5) = 2
         var cheapLand = new LandCard { DefinitionId = "land_plains", Fertility = 10, AccessibilityCost = 5 };
         game.Hand.Add(cheapLand);
-        game.Board.GetCell(0, 4).IsLocked = false;
+        var targetCell = game.Board.GetCell(0, 4);
+        targetCell.IsLocked = false;
+        targetCell.Land = LandCard.CreateEmpty();
         repo.Save(game);
         var fluxBefore = game.Resources.Flux;
         var (result, _) = svc.PlayCard(game.GameId, cheapLand.InstanceId, 0, 4);
@@ -363,7 +365,9 @@ public sealed class GameServiceTests
         var farm = new BuildingCard { DefinitionId = "building_farm" };
         game.Hand.Add(plains);
         game.Hand.Add(farm);
-        game.Board.GetCell(2, 2).IsLocked = false;
+        var targetCell = game.Board.GetCell(2, 2);
+        targetCell.IsLocked = false;
+        targetCell.Land = LandCard.CreateEmpty();
         repo.Save(game);
         var (afterLand, _) = svc.PlayCard(game.GameId, plains.InstanceId, 2, 2);
         var (result, _) = svc.PlayCard(game.GameId, farm.InstanceId, 2, 2);
@@ -382,7 +386,9 @@ public sealed class GameServiceTests
         var farm = new BuildingCard { DefinitionId = "building_farm" };
         game.Hand.Add(forest);
         game.Hand.Add(farm);
-        game.Board.GetCell(2, 2).IsLocked = false;
+        var targetCell = game.Board.GetCell(2, 2);
+        targetCell.IsLocked = false;
+        targetCell.Land = LandCard.CreateEmpty();
         repo.Save(game);
         var (afterLand, _) = svc.PlayCard(game.GameId, forest.InstanceId, 2, 2);
         Assert.Throws<InvalidOperationException>(() =>
@@ -399,7 +405,9 @@ public sealed class GameServiceTests
         var camp = new BuildingCard { DefinitionId = "building_lumber_camp" };
         game.Hand.Add(forest);
         game.Hand.Add(camp);
-        game.Board.GetCell(3, 3).IsLocked = false;
+        var targetCell = game.Board.GetCell(3, 3);
+        targetCell.IsLocked = false;
+        targetCell.Land = LandCard.CreateEmpty();
         repo.Save(game);
         var (afterLand, _) = svc.PlayCard(game.GameId, forest.InstanceId, 3, 3);
         var (result, _) = svc.PlayCard(game.GameId, camp.InstanceId, 3, 3);
@@ -417,7 +425,9 @@ public sealed class GameServiceTests
         var camp = new BuildingCard { DefinitionId = "building_lumber_camp" };
         game.Hand.Add(plains);
         game.Hand.Add(camp);
-        game.Board.GetCell(3, 3).IsLocked = false;
+        var targetCell = game.Board.GetCell(3, 3);
+        targetCell.IsLocked = false;
+        targetCell.Land = LandCard.CreateEmpty();
         repo.Save(game);
         var (afterLand, _) = svc.PlayCard(game.GameId, plains.InstanceId, 3, 3);
         Assert.Throws<InvalidOperationException>(() =>
@@ -435,7 +445,9 @@ public sealed class GameServiceTests
         var farm = new BuildingCard { DefinitionId = "building_farm" };
         game.Hand.Add(plains);
         game.Hand.Add(farm);
-        game.Board.GetCell(2, 2).IsLocked = false;
+        var targetCell = game.Board.GetCell(2, 2);
+        targetCell.IsLocked = false;
+        targetCell.Land = LandCard.CreateEmpty();
         repo.Save(game);
         var (afterLand, _) = svc.PlayCard(game.GameId, plains.InstanceId, 2, 2);
         Assert.Throws<InvalidOperationException>(() =>
@@ -453,7 +465,9 @@ public sealed class GameServiceTests
         var farm = new BuildingCard { DefinitionId = "building_farm" };
         game.Hand.Add(plains);
         game.Hand.Add(farm);
-        game.Board.GetCell(2, 2).IsLocked = false;
+        var targetCell = game.Board.GetCell(2, 2);
+        targetCell.IsLocked = false;
+        targetCell.Land = LandCard.CreateEmpty();
         repo.Save(game);
         var (afterLand, _) = svc.PlayCard(game.GameId, plains.InstanceId, 2, 2);
         var (result, _) = svc.PlayCard(game.GameId, farm.InstanceId, 2, 2);
@@ -826,11 +840,19 @@ public sealed class GameServiceTests
     // ── Locked cells ────────────────────────────────────────────────────────
 
     [Fact]
-    public void Board_StartsWith6UnlockedCells()
+    public void Board_StartsWith4UnlockedCells()
     {
         var board = new StrategyGame.Core.Models.Board.Board();
         var unlocked = board.AllCells().Count(c => !c.IsLocked);
         Assert.Equal(Board.StartRows * Board.StartCols, unlocked);
+    }
+
+    [Fact]
+    public void Board_StartingCellsHaveEmptyLand()
+    {
+        var board = new StrategyGame.Core.Models.Board.Board();
+        var emptyCells = board.AllCells().Count(c => c.IsEmpty);
+        Assert.Equal(Board.StartRows * Board.StartCols, emptyCells);
     }
 
     [Fact]
@@ -856,17 +878,21 @@ public sealed class GameServiceTests
     }
 
     [Fact]
-    public void PlayCard_Land_UnlocksAdjacentCells()
+    public void PlayCard_Land_ExpandsEmptySlotsToAdjacentCells()
     {
         var repo = new InMemoryGameRepository();
         var svc = new GameService(repo, new CardCatalog());
         var game = svc.StartGame("Alice");
-        // Place land at (1,2) — the rightmost column of the starting zone
+        // Place land at (1,1) — corner of starting zone, adjacent to locked cells
         var land = game.Hand.OfType<LandCard>().First();
-        svc.PlayCard(game.GameId, land.InstanceId, 1, 2);
+        svc.PlayCard(game.GameId, land.InstanceId, 1, 1);
         var updated = svc.LoadGame(game.GameId);
-        // (1,3) should now be unlocked (right neighbor of (1,2))
-        Assert.False(updated.Board.GetCell(1, 3).IsLocked);
+        // (1,2) should now be unlocked with Empty land (right neighbor)
+        Assert.False(updated.Board.GetCell(1, 2).IsLocked);
+        Assert.True(updated.Board.GetCell(1, 2).IsEmpty);
+        // (2,1) should now be unlocked with Empty land (below neighbor)
+        Assert.False(updated.Board.GetCell(2, 1).IsLocked);
+        Assert.True(updated.Board.GetCell(2, 1).IsEmpty);
     }
 
     // ── Wasteland ───────────────────────────────────────────────────────────
@@ -1120,6 +1146,7 @@ public sealed class GameServiceTests
         var set1 = new BuildingCard { DefinitionId = "building_settlement", PopulationCapacity = 20 };
         var set2 = new BuildingCard { DefinitionId = "building_settlement", PopulationCapacity = 15 };
         game.Hand.AddRange(new CardBase[] { land1, land2, set1, set2 });
+        game.Resources = game.Resources with { Flux = ResourceAmount.MaxFlux * 2 };
         repo.Save(game);
 
         svc.PlayCard(game.GameId, land1.InstanceId, 0, 0);

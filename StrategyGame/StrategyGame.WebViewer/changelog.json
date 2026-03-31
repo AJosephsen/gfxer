@@ -1,5 +1,10 @@
 [
   {
+    "hash": "5eb1248",
+    "message": "fix: add spacing before pickaxe icon in Pop stat",
+    "date": "2026-03-31"
+  },
+  {
     "hash": "e3d565f",
     "message": "feat: rename board header to Table, remove stats from section banners",
     "date": "2026-03-31"
@@ -192,11 +197,6 @@
   {
     "hash": "8030eeb",
     "message": "feat: add delete_game MCP command",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "fba862d",
-    "message": "fix: show population as X/maxCap format everywhere",
     "date": "2026-03-28"
   }
 ]

@@ -19,6 +19,7 @@ public sealed class BoardCell
     /// </summary>
     public bool IsLocked { get; set; }
 
-    public bool IsEmpty => Land == null;
-    public bool CanBuild => Land != null && Building == null;
+    public bool IsEmpty => Land != null && Land.DefinitionId == "land_empty";
+    public bool HasTerrain => Land != null && Land.DefinitionId != "land_empty";
+    public bool CanBuild => HasTerrain && Building == null;
 }

@@ -60,7 +60,7 @@ app.MapGet("/api/games/{gameId}", (string gameId) =>
 // Get the card catalog (definitions for rendering)
 app.MapGet("/api/catalog", () =>
 {
-  var defs = catalog.AllPlayable.Select<CardDefinition, object>(d => d switch
+  var defs = catalog.All.Select<CardDefinition, object>(d => d switch
     {
         BuildingDefinition b => new
         {
@@ -672,6 +672,15 @@ static class ViewerHtml
     line-height: 1.35;
     text-align: center;
   }
+  .cell .empty-hint {
+    font-style: italic;
+    color: var(--parchment);
+    opacity: 0.7;
+  }
+  .cell.empty-slot {
+    border-style: dashed;
+    opacity: 0.7;
+  }
 
   .hand-section {
     max-width: 860px;
@@ -963,35 +972,38 @@ function render(game) {
       return mergeResourceMaps(sum, scaleResourceMap(bDef.production || {}, ratio));
     }, {});
 
-    const badge = `Cells ${buildingCount}/${stackCount}`;
+    const badge = `${stackCount}`;
 
-    let statParts = [`avg fert ×${(avgFertility / 10).toFixed(1)}`];
-    if (buildingCount > 0) statParts.push(`buildings ${buildingCount}`);
-    const prodParts = formatResourceMap(estimatedProduction, '+');
-    if (prodParts.length > 0) statParts.push(`prod ${prodParts.join(' ')}`);
+    // Empty stacks get a simpler display
+    const isEmptyStack = stack.landId === 'land_empty';
+    if (isEmptyStack) div.classList.add('empty-slot');
 
+    let statParts = [];
+    if (!isEmptyStack) {
+      statParts.push(`avg fert ×${(avgFertility / 10).toFixed(1)}`);
+      if (buildingCount > 0) statParts.push(`buildings ${buildingCount}`);
+      const prodParts = formatResourceMap(estimatedProduction, '+');
+      if (prodParts.length > 0) statParts.push(`prod ${prodParts.join(' ')}`);
+    }
     const displayTitle = stack.landName;
 
     let html = `<div class="stack-header"><span class="stack-badge">${badge}</span><span class="stack-title">${displayTitle}</span></div>`;
     html += `<div class="stack-footer">`;
 
-    if (topBuildingCell) {
-      const topDef = catalog[topBuildingCell.building.definitionId];
-      const topName = topDef ? topDef.name : topBuildingCell.building.definitionId;
-      html += `<span class="building-name">${topName}</span>`;
+    if (isEmptyStack) {
+      html += `<span class="stack-stats empty-hint">Place a terrain card here</span>`;
+    } else {
+      if (topBuildingCell) {
+        const topDef = catalog[topBuildingCell.building.definitionId];
+        const topName = topDef ? topDef.name : topBuildingCell.building.definitionId;
+        html += `<span class="building-name">${topName}</span>`;
+      }
+      html += `<span class="stack-stats">${statParts.join(' · ')}</span>`;
     }
-
-    html += `<span class="stack-stats">${statParts.join(' · ')}</span>`;
     html += `</div>`;
 
     div.innerHTML = html;
     board.appendChild(div);
-  }
-
-  if (placedCells.length < cells.length) {
-    const placeholder = el('div', 'cell placeholder');
-    placeholder.innerHTML = `<span class="placeholder-label">Next Slot</span>`;
-    board.appendChild(placeholder);
   }
 
   boardWrap.appendChild(board);
