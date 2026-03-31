@@ -1,5 +1,10 @@
 [
   {
+    "hash": "e3d565f",
+    "message": "feat: rename board header to Table, remove stats from section banners",
+    "date": "2026-03-31"
+  },
+  {
     "hash": "58002e2",
     "message": "feat: banner headers straddle panel border \u2014 half in, half out",
     "date": "2026-03-31"
@@ -192,11 +197,6 @@
   {
     "hash": "fba862d",
     "message": "fix: show population as X/maxCap format everywhere",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "ec0f6b6",
-    "message": "feat: settlement population capacity (10-40 rolled at creation, caps total People)",
     "date": "2026-03-28"
   }
 ]

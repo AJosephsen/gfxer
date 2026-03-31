@@ -893,7 +893,7 @@ function render(game) {
     `<span class="divider">·</span>` +
     sp('🌾', res.food, 'Food') +
     sp('🪵', res.wood, 'Wood') +
-    sp('👥', `${res.people}/${popCap} · ${totalOccupied}⛏`, 'Pop') +
+    sp('👥', `${res.people}/${popCap} · ${totalOccupied} ⛏`, 'Pop') +
     sp('⚡', `${res.flux ?? res.focus ?? 0}/14`, 'Flux') +
     extraResourcePills(res) +
     sp('🃏', game.landDeck ? game.landDeck.length : '?', 'Deck');
