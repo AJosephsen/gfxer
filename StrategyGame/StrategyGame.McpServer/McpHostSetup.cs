@@ -1,8 +1,5 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using ModelContextProtocol.Protocol;
-using McpSdk = ModelContextProtocol.Server;
 
 namespace StrategyGame.McpServer;
 
@@ -10,22 +7,32 @@ public static class McpHostSetup
 {
     public static void ConfigureLogging(HostApplicationBuilder builder)
     {
-        // MCP stdio transport owns stdout. Route all logs via the MCP notifications/message
-        // protocol so VS Code surfaces them at the correct level (info, warning, etc.)
-        // in the Output panel. Messages sent before a client connects are silently dropped.
+        // MCP stdio transport owns stdout; redirect logs to stderr so VS Code surfaces
+        // them in the Output panel without corrupting the JSON-RPC protocol stream.
+        // VS Code labels all server stderr as [warning] — this is a VS Code limitation,
+        // not a server issue. The alternative (notifications/message) causes a circular
+        // dependency between McpServer and ILoggerFactory and prevents startup.
         builder.Logging.ClearProviders();
-        builder.Logging.SetMinimumLevel(LogLevel.Information);
+        builder.Logging.AddProvider(new StderrLoggerProvider());
+    }
+}
 
-        // McpServer.AsClientLoggerProvider() returns an ILoggerProvider that translates
-        // ILogger calls into notifications/message notifications with proper log levels.
-        builder.Services.AddSingleton<ILoggerProvider>(
-            sp => sp.GetRequiredService<McpSdk.McpServer>().AsClientLoggerProvider());
+file sealed class StderrLoggerProvider : ILoggerProvider
+{
+    public ILogger CreateLogger(string categoryName) => new StderrLogger(categoryName);
+    public void Dispose() { }
+}
 
-        // Declare the logging capability so connecting clients know we emit log notifications.
-        builder.Services.PostConfigure<McpSdk.McpServerOptions>(opts =>
-        {
-            opts.Capabilities ??= new ServerCapabilities();
-            opts.Capabilities.Logging = new LoggingCapability();
-        });
+file sealed class StderrLogger(string category) : ILogger
+{
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+    public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None;
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+        Func<TState, Exception?, string> formatter)
+    {
+        if (!IsEnabled(logLevel)) return;
+        Console.Error.WriteLine($"{DateTime.UtcNow:HH:mm:ss.fff} [{logLevel,-11}] {category}: {formatter(state, exception)}");
+        if (exception is not null)
+            Console.Error.WriteLine(exception);
     }
 }
