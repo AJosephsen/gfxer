@@ -1,0 +1,82 @@
+- generic [active] [ref=e1]:
+  - generic "Open menu" [ref=e2] [cursor=pointer]:
+    - generic [ref=e3]: ⚔
+  - generic [ref=e4]:
+    - generic [ref=e5]: Round 1
+    - generic [ref=e6]: Genesis
+    - generic [ref=e7]: ·
+    - generic [ref=e8]:
+      - generic [ref=e9]: 🌾
+      - generic [ref=e10]: "8"
+      - generic [ref=e11]: Food
+    - generic [ref=e12]:
+      - generic [ref=e13]: 🪵
+      - generic [ref=e14]: "0"
+      - generic [ref=e15]: Wood
+    - generic [ref=e16]:
+      - generic [ref=e17]: 👥
+      - generic [ref=e18]: 5/0 · 0⛏
+      - generic [ref=e19]: Pop
+    - generic [ref=e20]:
+      - generic [ref=e21]: ⚡
+      - generic [ref=e22]: 14/14
+      - generic [ref=e23]: Flux
+    - generic [ref=e24]:
+      - generic [ref=e25]: 🃏
+      - generic [ref=e26]: "500"
+      - generic [ref=e27]: Deck
+  - generic [ref=e28]:
+    - generic [ref=e29]:
+      - heading "Board Stacks (0)" [level=2] [ref=e30]
+      - generic [ref=e34]: Next Slot
+    - generic [ref=e35]:
+      - heading "Hand (4/7)" [level=2] [ref=e36]
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - generic: Plains
+          - generic:
+            - generic:
+              - generic: Fertility
+              - generic: ×0.7
+            - generic:
+              - generic: Access
+              - generic: ×0.7
+            - generic:
+              - generic: Flux
+              - generic: "3"
+        - generic [ref=e39]:
+          - generic: Plains
+          - generic:
+            - generic:
+              - generic: Fertility
+              - generic: ×1.4
+            - generic:
+              - generic: Access
+              - generic: ×0.9
+            - generic:
+              - generic: Flux
+              - generic: "3"
+        - generic [ref=e40]:
+          - generic: Hill
+          - generic:
+            - generic:
+              - generic: Fertility
+              - generic: ×0.9
+            - generic:
+              - generic: Access
+              - generic: ×0.7
+            - generic:
+              - generic: Flux
+              - generic: "3"
+        - generic [ref=e41]:
+          - generic: Settlement
+          - generic:
+            - generic:
+              - generic: +
+              - generic: 2👥
+            - generic:
+              - generic: –
+              - generic: 1🌾
+            - generic:
+              - generic: Flux
+              - generic: "4"

@@ -1,5 +1,45 @@
 [
   {
+    "hash": "0c2b2c4",
+    "message": "feat: ornate panel frames, crimson banner headers, polished stats bar",
+    "date": "2026-03-31"
+  },
+  {
+    "hash": "3bc0d71",
+    "message": "fix: use official SDK pattern for MCP server logging",
+    "date": "2026-03-31"
+  },
+  {
+    "hash": "abd463a",
+    "message": "fix: revert to stderr logging to avoid circular dependency with McpServer",
+    "date": "2026-03-31"
+  },
+  {
+    "hash": "0f739c2",
+    "message": "feat: route MCP server logs via notifications/message for proper VS Code log levels",
+    "date": "2026-03-31"
+  },
+  {
+    "hash": "98028ce",
+    "message": "fix: log to stderr so VS Code surfaces output in MCP Output panel",
+    "date": "2026-03-31"
+  },
+  {
+    "hash": "006857d",
+    "message": "fix: redirect MCP server logs to stderr instead of suppressing",
+    "date": "2026-03-31"
+  },
+  {
+    "hash": "2614e2d",
+    "message": "fix: suppress MCP server startup log noise on stdout",
+    "date": "2026-03-31"
+  },
+  {
+    "hash": "f843094",
+    "message": "feat: support generic resources and upgrade placement",
+    "date": "2026-03-31"
+  },
+  {
     "hash": "263d7b6",
     "message": "feat: add data-driven catalog inheritance support",
     "date": "2026-03-31"
@@ -157,46 +197,6 @@
   {
     "hash": "ca34374",
     "message": "feat: WebViewer shows population/occupation and worker assignments",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "38afc06",
-    "message": "feat: round-robin worker distribution with scaled production",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "2b941dc",
-    "message": "feat: worker occupation system \u2014 people are occupied not consumed",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "12196fc",
-    "message": "feat: add WebViewer \u2014 read-only live game viewer on port 5050",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "85d0c76",
-    "message": "feat: add Wasteland land card (30% of deck, unbuildable)",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "157a391",
-    "message": "feat: hand limit (7), discard pile, 500-card land deck with 15/round burn, locked board cells with adjacency expansion",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "d62617c",
-    "message": "feat: add per-card Fertility and AccessibilityCost rolled stats to LandCard",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "7fc1115",
-    "message": "feat: add Wood resource, Lumber Camp, Fishing Camp, Sheep Pasture buildings; Farm costs 10 Wood to place",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "322b10e",
-    "message": "fix: register IGameRepository in DI; add README and rebuild script",
     "date": "2026-03-28"
   }
 ]
