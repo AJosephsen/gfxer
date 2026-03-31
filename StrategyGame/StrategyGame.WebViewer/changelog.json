@@ -1,5 +1,10 @@
 [
   {
+    "hash": "dd2c507",
+    "message": "feat: configurable stat ranges per land card, bake FluxCost at creation, remove AccessibilityCost",
+    "date": "2026-03-31"
+  },
+  {
     "hash": "8087c97",
     "message": "test: board stays at 4 slots after placing 3 terrain cards",
     "date": "2026-03-31"
@@ -192,11 +197,6 @@
   {
     "hash": "118f640",
     "message": "docs: add CardArt generation guide",
-    "date": "2026-03-28"
-  },
-  {
-    "hash": "54d2e08",
-    "message": "feat: card frame template + compose pipeline",
     "date": "2026-03-28"
   }
 ]

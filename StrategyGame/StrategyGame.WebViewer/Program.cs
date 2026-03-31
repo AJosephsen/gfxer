@@ -810,9 +810,9 @@ let pollTimer = null;
 let lastJson = '';
 
 const RESOURCE_META = {
-  food: { icon: '🌾', label: 'Food' },
+  food: { icon: '�', label: 'Food' },
   wood: { icon: '🪵', label: 'Wood' },
-  people: { icon: '👥', label: 'People' },
+  people: { icon: '🧑🏽', label: 'People' },
   flux: { icon: '⚡', label: 'Flux' },
   gold: { icon: '🪙', label: 'Gold' },
   bricks: { icon: '🧱', label: 'Bricks' },
@@ -900,9 +900,9 @@ function render(game) {
     `<span class="round-label">Round ${game.round}</span>` +
     `<span class="player-label">${game.playerName}</span>` +
     `<span class="divider">·</span>` +
-    sp('🌾', res.food, 'Food') +
+    sp('�', res.food, 'Food') +
     sp('🪵', res.wood, 'Wood') +
-    sp('👥', `${res.people}/${popCap} · ${totalOccupied} ⛏`, 'Pop') +
+    sp('🧑🏽', `${res.people}/${popCap} · ${totalOccupied} ⛏`, 'Pop') +
     sp('⚡', `${res.flux ?? res.focus ?? 0}/14`, 'Flux') +
     extraResourcePills(res) +
     sp('🃏', game.landDeck ? game.landDeck.length : '?', 'Deck');
