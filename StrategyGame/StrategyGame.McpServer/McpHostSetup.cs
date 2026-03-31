@@ -7,13 +7,14 @@ public static class McpHostSetup
 {
     public static void ConfigureLogging(HostApplicationBuilder builder)
     {
-        // MCP stdio transport owns stdout; redirect all logs to stderr to avoid corrupting the protocol stream.
+        // MCP stdio transport owns stdout; redirect logs to stderr so VS Code surfaces
+        // them in the Output panel (MCP Server: strategy-game) without corrupting the protocol.
         builder.Logging.ClearProviders();
         builder.Logging.AddProvider(new StderrLoggerProvider());
     }
 }
 
-/// <summary>Writes log output to stderr so it doesn't interfere with the MCP stdio protocol on stdout.</summary>
+/// <summary>Writes log output to stderr — VS Code captures MCP server stderr in its Output panel.</summary>
 file sealed class StderrLoggerProvider : ILoggerProvider
 {
     public ILogger CreateLogger(string categoryName) => new StderrLogger(categoryName);
@@ -28,7 +29,7 @@ file sealed class StderrLogger(string category) : ILogger
         Func<TState, Exception?, string> formatter)
     {
         if (!IsEnabled(logLevel)) return;
-        Console.Error.WriteLine($"[{logLevel,-11}] {category}: {formatter(state, exception)}");
+        Console.Error.WriteLine($"{DateTime.UtcNow:HH:mm:ss.fff} [{logLevel,-11}] {category}: {formatter(state, exception)}");
         if (exception is not null)
             Console.Error.WriteLine(exception);
     }
