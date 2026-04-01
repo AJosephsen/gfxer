@@ -10,6 +10,40 @@ Core intent:
 
 ---
 
+## UML Class Diagram (Step 1: Non-Null Slot State)
+
+This first UML step models the no-null invariant: each board slot always contains a `Card`, and a new slot starts with `EmptyCard`.
+
+```mermaid
+classDiagram
+    class Card {
+        <<abstract>>
+        +id: string
+        +type: string
+        +tags: string[]
+    }
+
+    class EmptyCard {
+        +isPlaceholder: bool = true
+    }
+
+    class BoardSlot {
+        +index: int
+        +currentCard: Card
+    }
+
+    Card <|-- EmptyCard
+    BoardSlot *-- Card : currentCard (always present)
+```
+
+Step-1 intent:
+
+- `BoardSlot.currentCard` is never null.
+- New slots are initialized with `EmptyCard`.
+- Future steps can replace `EmptyCard` with `LandCard` and then add terrain/building-specific subclasses.
+
+---
+
 ## Type Table (outside the diagram)
 
 | Type | Purpose |
