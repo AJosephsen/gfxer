@@ -37,10 +37,10 @@ classDiagram
     class LumberCamp
     class FishingCamp
 
-    class PlainsTerrain
-    class ForestTerrain
-    class BeachTerrain
-    class HillTerrain
+    class Plains
+    class Forest
+    class Beach
+    class Hill
 
     class EmptyCard {
         +isPlaceholder: bool = true
@@ -61,10 +61,10 @@ classDiagram
     Structure <|-- Farm
     Structure <|-- LumberCamp
     Structure <|-- FishingCamp
-    Terrain <|-- PlainsTerrain
-    Terrain <|-- ForestTerrain
-    Terrain <|-- BeachTerrain
-    Terrain <|-- HillTerrain
+    Terrain <|-- Plains
+    Terrain <|-- Forest
+    Terrain <|-- Beach
+    Terrain <|-- Hill
     CardSlot~TCard~ *-- TCard : currentCard (always present)
     Table *-- "4" CardSlot~Terrain~ : terrainSlots
 ```
@@ -78,7 +78,7 @@ Step-4 intent:
 - `Farm` is a concrete `Structure` subtype.
 - `LumberCamp` and `FishingCamp` are concrete `Structure` subtypes.
 - `CardSlot<TCard>` is generic, with `TCard` constrained to inherit from `Card`.
-- Concrete terrain implementations are `PlainsTerrain`, `ForestTerrain`, `BeachTerrain`, and `HillTerrain`.
+- Concrete terrain implementations are `Plains`, `Forest`, `Beach`, and `Hill`.
 - A `Table` owns exactly four terrain slots, represented as `CardSlot<Terrain>`.
 - Future steps can add concrete structure subclasses with terrain-based placement constraints.
 
