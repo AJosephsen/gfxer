@@ -10,9 +10,9 @@ Core intent:
 
 ---
 
-## UML Class Diagram (Step 1: Non-Null Slot State)
+## UML Class Diagram (Step 2: Terrain Subclasses)
 
-This first UML step models the no-null invariant: each board slot always contains a `Card`, and a new slot starts with `EmptyCard`.
+This UML step models the no-null invariant and adds concrete terrain subclasses under abstract `Terrain`.
 
 ```mermaid
 classDiagram
@@ -28,6 +28,11 @@ classDiagram
         +terrainType: string
     }
 
+    class PlainsTerrain
+    class ForestTerrain
+    class BeachTerrain
+    class HillTerrain
+
     class EmptyCard {
         +isPlaceholder: bool = true
     }
@@ -39,15 +44,20 @@ classDiagram
 
     Card <|-- EmptyCard
     Card <|-- Terrain
+    Terrain <|-- PlainsTerrain
+    Terrain <|-- ForestTerrain
+    Terrain <|-- BeachTerrain
+    Terrain <|-- HillTerrain
     BoardSlot *-- Card : currentCard (always present)
 ```
 
-Step-1 intent:
+Step-2 intent:
 
 - `BoardSlot.currentCard` is never null.
 - New slots are initialized with `EmptyCard`.
 - `Terrain` is abstract and inherits from `Card`.
-- Future steps can replace `EmptyCard` with `LandCard` and then add terrain/building-specific subclasses.
+- Concrete terrain implementations are `PlainsTerrain`, `ForestTerrain`, `BeachTerrain`, and `HillTerrain`.
+- Future steps can add building subclasses with terrain-based placement constraints.
 
 ---
 
