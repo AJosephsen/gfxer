@@ -44,7 +44,9 @@ classDiagram
 
     class Plains
     class Forest
-    class Beach
+    class Beach {
+        +settlementSlot: CardSlot~BeachSettlement~
+    }
     class Hill
 
     class EmptyCard {
@@ -74,6 +76,7 @@ classDiagram
     Terrain <|-- Beach
     Terrain <|-- Hill
     CardSlot~TCard~ *-- TCard : currentCard (always present)
+    Beach *-- CardSlot~BeachSettlement~ : settlementSlot
     Table *-- "4" CardSlot~Terrain~ : terrainSlots
 ```
 
@@ -89,6 +92,7 @@ Step-4 intent:
 - `LumberCamp` and `FishingCamp` are concrete `Structure` subtypes.
 - `CardSlot<TCard>` is generic, with `TCard` constrained to inherit from `Card`.
 - Concrete terrain implementations are `Plains`, `Forest`, `Beach`, and `Hill`.
+- `Beach` owns a `CardSlot<BeachSettlement>` for its settlement placement.
 - A `Table` owns exactly four terrain slots, represented as `CardSlot<Terrain>`.
 - Future steps can add concrete structure subclasses with terrain-based placement constraints.
 
