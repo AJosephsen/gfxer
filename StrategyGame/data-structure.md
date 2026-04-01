@@ -10,9 +10,9 @@ Core intent:
 
 ---
 
-## UML Class Diagram (Step 3: Terrain Table Slots)
+## UML Class Diagram (Step 4: Structure Base Class)
 
-This UML step models the no-null invariant, concrete terrain subclasses, and a table that contains four terrain slots.
+This UML step models the no-null invariant, concrete terrain subclasses, a structure base class, and a table that contains four terrain slots.
 
 ```mermaid
 classDiagram
@@ -27,6 +27,13 @@ classDiagram
         <<abstract>>
         +terrainType: string
     }
+
+    class Structure {
+        <<abstract>>
+        +allowedTerrains: string[]
+    }
+
+    class Farm
 
     class PlainsTerrain
     class ForestTerrain
@@ -48,6 +55,8 @@ classDiagram
 
     Card <|-- EmptyCard
     Card <|-- Terrain
+    Card <|-- Structure
+    Structure <|-- Farm
     Terrain <|-- PlainsTerrain
     Terrain <|-- ForestTerrain
     Terrain <|-- BeachTerrain
@@ -56,15 +65,17 @@ classDiagram
     Table *-- "4" CardSlot~Terrain~ : terrainSlots
 ```
 
-Step-3 intent:
+Step-4 intent:
 
 - `CardSlot.currentCard` is never null.
 - New slots are initialized with `EmptyCard`.
 - `Terrain` is abstract and inherits from `Card`.
+- `Structure` is abstract and inherits from `Card` as the base for building-like cards.
+- `Farm` is a concrete `Structure` subtype.
 - `CardSlot<TCard>` is generic, with `TCard` constrained to inherit from `Card`.
 - Concrete terrain implementations are `PlainsTerrain`, `ForestTerrain`, `BeachTerrain`, and `HillTerrain`.
 - A `Table` owns exactly four terrain slots, represented as `CardSlot<Terrain>`.
-- Future steps can add building subclasses with terrain-based placement constraints.
+- Future steps can add concrete structure subclasses with terrain-based placement constraints.
 
 ---
 
@@ -74,6 +85,8 @@ Step-3 intent:
 |---|---|
 | Empty | Root state of a controllable board slot. No production by itself. Accepts terrain placement. |
 | Terrain (abstract) | Conceptual parent type for concrete terrain variants. Not a direct card in hand. |
+| Structure (abstract) | Conceptual parent type for building-like cards. Carries shared placement constraints. |
+| Farm | Concrete Structure implementation for agriculture-focused development on plains terrain. |
 | Plains | Concrete Terrain implementation. Fertile baseline terrain for agriculture-focused development. |
 | Forest | Concrete Terrain implementation. Wood-focused terrain for forestry and industry chains. |
 | Beach | Concrete Terrain implementation. Coastal terrain for trade and shoreline building chains. |
