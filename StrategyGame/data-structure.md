@@ -33,11 +33,6 @@ classDiagram
         +allowedTerrains: string[]
     }
 
-    class PlainsStructure {
-        <<abstract>>
-        +plainsKind: farm|plainsSettlement
-    }
-
     class Farm
     class Settlement {
         <<abstract>>
@@ -51,7 +46,7 @@ classDiagram
     class FishingCamp
 
     class Plains {
-        +plainsStructureSlot: CardSlot~PlainsStructure~
+        +plainsStructureSlot: UnionCardSlot~PlainsSettlement,Farm~
     }
     class Forest
     class Beach {
@@ -80,12 +75,9 @@ classDiagram
     Card <|-- EmptyCard
     Card <|-- Terrain
     Card <|-- Structure
-    Structure <|-- PlainsStructure
     Structure <|-- Farm
     Structure <|-- Settlement
-    PlainsStructure <|-- Farm
     Settlement <|-- PlainsSettlement
-    PlainsStructure <|-- PlainsSettlement
     PlainsSettlement <|-- PlainsTown
     PlainsTown <|-- PlainsCity
     PlainsCity <|-- PlainsMetropolis
@@ -97,7 +89,7 @@ classDiagram
     Terrain <|-- Hill
     CardSlot~TCard~ *-- TCard : currentCard (always present)
     CardSlot~TCard~ <|-- UnionCardSlot~TCard1,TCard2~
-    Plains *-- CardSlot~PlainsStructure~ : plainsStructureSlot
+    Plains *-- UnionCardSlot~PlainsSettlement,Farm~ : plainsStructureSlot
     Beach *-- UnionCardSlot~BeachSettlement,FishingCamp~ : beachStructureSlot
     Table *-- "4" CardSlot~Terrain~ : terrainSlots
 ```
@@ -108,7 +100,6 @@ Step-4 intent:
 - New slots are initialized with `EmptyCard`.
 - `Terrain` is abstract and inherits from `Card`.
 - `Structure` is abstract and inherits from `Card` as the base for building-like cards.
-- `PlainsStructure` is an abstract `Structure` subtype used for plains-specific occupants.
 - `Farm` is a concrete `Structure` subtype.
 - `Settlement` is an abstract `Structure` subtype.
 - `PlainsSettlement` and `BeachSettlement` are concrete subtypes under `Settlement`.
@@ -117,7 +108,7 @@ Step-4 intent:
 - `CardSlot<TCard>` is generic, with `TCard` constrained to inherit from `Card`.
 - `UnionCardSlot<TCard1,TCard2>` is a C#-friendly union slot where both generic types inherit from `Card`.
 - Concrete terrain implementations are `Plains`, `Forest`, `Beach`, and `Hill`.
-- `Plains` owns a `CardSlot<PlainsStructure>`, enabling a discriminated choice between `Farm` and `PlainsSettlement`.
+- `Plains` owns a `UnionCardSlot<PlainsSettlement,Farm>`.
 - `Beach` owns a `UnionCardSlot<BeachSettlement,FishingCamp>`.
 - A `Table` owns exactly four terrain slots, represented as `CardSlot<Terrain>`.
 - Future steps can add concrete structure subclasses with terrain-based placement constraints.
@@ -131,7 +122,6 @@ Step-4 intent:
 | Empty | Root state of a controllable board slot. No production by itself. Accepts terrain placement. |
 | Terrain (abstract) | Conceptual parent type for concrete terrain variants. Not a direct card in hand. |
 | Structure (abstract) | Conceptual parent type for building-like cards. Carries shared placement constraints. |
-| PlainsStructure (abstract) | Plains-only structure base, used as the discriminated slot type for farm/settlement placement. |
 | UnionCardSlot<TCard1, TCard2> | Generic C#-style union slot that accepts either of two Card subtypes in one slot. |
 | Farm | Concrete Structure implementation for agriculture-focused development on plains terrain. |
 | Settlement (abstract) | Shared settlement base type for terrain-specific settlement variants. |
