@@ -1,16 +1,20 @@
 # StrategyCards
 
-Microscopic TypeScript web shell for fast TDD cycles.
+Microscopic C# setup for fast TDD cycles.
+
+## Structure
+
+- `StrategyCards.Core/` class library
+- `StrategyCards.Core.Tests/` xUnit test project
+- `StrategyCards.slnx` solution
 
 ## Commands
 
-- `npm install`
-- `npm run test:watch` for red/green loop
-- `npm run dev` for browser shell
-- `npm run typecheck` for strict TS checks
+- `dotnet test`
+- `dotnet test --no-build`
 
 ## TDD Loop
 
-1. Write one small failing test in `src/core/*.test.ts`.
-2. Implement minimum code in `src/core/*.ts`.
-3. Refactor while keeping tests green.
+1. Write one small failing test in `StrategyCards.Core.Tests/`.
+2. Implement minimum code in `StrategyCards.Core/`.
+3. Refactor while tests stay green.

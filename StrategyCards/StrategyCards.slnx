@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="StrategyCards.Core.Tests/StrategyCards.Core.Tests.csproj" />
+  <Project Path="StrategyCards.Core/StrategyCards.Core.csproj" />
+</Solution>
