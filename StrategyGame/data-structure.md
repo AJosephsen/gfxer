@@ -38,6 +38,11 @@ classDiagram
         +beachKind: beachSettlement|fishingCamp
     }
 
+    class PlainsStructure {
+        <<abstract>>
+        +plainsKind: farm|plainsSettlement
+    }
+
     class Farm
     class Settlement {
         <<abstract>>
@@ -50,7 +55,9 @@ classDiagram
     class LumberCamp
     class FishingCamp
 
-    class Plains
+    class Plains {
+        +plainsStructureSlot: CardSlot~PlainsStructure~
+    }
     class Forest
     class Beach {
         +beachStructureSlot: CardSlot~BeachStructure~
@@ -74,9 +81,12 @@ classDiagram
     Card <|-- Terrain
     Card <|-- Structure
     Structure <|-- BeachStructure
+    Structure <|-- PlainsStructure
     Structure <|-- Farm
     Structure <|-- Settlement
+    PlainsStructure <|-- Farm
     Settlement <|-- PlainsSettlement
+    PlainsStructure <|-- PlainsSettlement
     PlainsSettlement <|-- PlainsTown
     PlainsTown <|-- PlainsCity
     PlainsCity <|-- PlainsMetropolis
@@ -89,6 +99,7 @@ classDiagram
     Terrain <|-- Beach
     Terrain <|-- Hill
     CardSlot~TCard~ *-- TCard : currentCard (always present)
+    Plains *-- CardSlot~PlainsStructure~ : plainsStructureSlot
     Beach *-- CardSlot~BeachStructure~ : beachStructureSlot
     Table *-- "4" CardSlot~Terrain~ : terrainSlots
 ```
@@ -100,6 +111,7 @@ Step-4 intent:
 - `Terrain` is abstract and inherits from `Card`.
 - `Structure` is abstract and inherits from `Card` as the base for building-like cards.
 - `BeachStructure` is an abstract `Structure` subtype used for beach-specific occupants.
+- `PlainsStructure` is an abstract `Structure` subtype used for plains-specific occupants.
 - `Farm` is a concrete `Structure` subtype.
 - `Settlement` is an abstract `Structure` subtype.
 - `PlainsSettlement` and `BeachSettlement` are concrete subtypes under `Settlement`.
@@ -108,6 +120,7 @@ Step-4 intent:
 - `BeachSettlement` and `FishingCamp` are concrete subtypes under `BeachStructure`.
 - `CardSlot<TCard>` is generic, with `TCard` constrained to inherit from `Card`.
 - Concrete terrain implementations are `Plains`, `Forest`, `Beach`, and `Hill`.
+- `Plains` owns a `CardSlot<PlainsStructure>`, enabling a discriminated choice between `Farm` and `PlainsSettlement`.
 - `Beach` owns a `CardSlot<BeachStructure>`, enabling a discriminated choice between `BeachSettlement` and `FishingCamp`.
 - A `Table` owns exactly four terrain slots, represented as `CardSlot<Terrain>`.
 - Future steps can add concrete structure subclasses with terrain-based placement constraints.
@@ -121,6 +134,7 @@ Step-4 intent:
 | Empty | Root state of a controllable board slot. No production by itself. Accepts terrain placement. |
 | Terrain (abstract) | Conceptual parent type for concrete terrain variants. Not a direct card in hand. |
 | Structure (abstract) | Conceptual parent type for building-like cards. Carries shared placement constraints. |
+| PlainsStructure (abstract) | Plains-only structure base, used as the discriminated slot type for farm/settlement placement. |
 | BeachStructure (abstract) | Beach-only structure base, used as the discriminated slot type for coastal placement. |
 | Farm | Concrete Structure implementation for agriculture-focused development on plains terrain. |
 | Settlement (abstract) | Shared settlement base type for terrain-specific settlement variants. |
