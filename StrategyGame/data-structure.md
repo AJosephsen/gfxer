@@ -34,6 +34,8 @@ classDiagram
     }
 
     class Farm
+    class LumberCamp
+    class FishingCamp
 
     class PlainsTerrain
     class ForestTerrain
@@ -57,6 +59,8 @@ classDiagram
     Card <|-- Terrain
     Card <|-- Structure
     Structure <|-- Farm
+    Structure <|-- LumberCamp
+    Structure <|-- FishingCamp
     Terrain <|-- PlainsTerrain
     Terrain <|-- ForestTerrain
     Terrain <|-- BeachTerrain
@@ -72,6 +76,7 @@ Step-4 intent:
 - `Terrain` is abstract and inherits from `Card`.
 - `Structure` is abstract and inherits from `Card` as the base for building-like cards.
 - `Farm` is a concrete `Structure` subtype.
+- `LumberCamp` and `FishingCamp` are concrete `Structure` subtypes.
 - `CardSlot<TCard>` is generic, with `TCard` constrained to inherit from `Card`.
 - Concrete terrain implementations are `PlainsTerrain`, `ForestTerrain`, `BeachTerrain`, and `HillTerrain`.
 - A `Table` owns exactly four terrain slots, represented as `CardSlot<Terrain>`.
@@ -87,6 +92,8 @@ Step-4 intent:
 | Terrain (abstract) | Conceptual parent type for concrete terrain variants. Not a direct card in hand. |
 | Structure (abstract) | Conceptual parent type for building-like cards. Carries shared placement constraints. |
 | Farm | Concrete Structure implementation for agriculture-focused development on plains terrain. |
+| Lumber Camp | Concrete Structure implementation for forestry-focused development on forest terrain. |
+| Fishing Camp | Concrete Structure implementation for coastal development on beach terrain. |
 | Plains | Concrete Terrain implementation. Fertile baseline terrain for agriculture-focused development. |
 | Forest | Concrete Terrain implementation. Wood-focused terrain for forestry and industry chains. |
 | Beach | Concrete Terrain implementation. Coastal terrain for trade and shoreline building chains. |
