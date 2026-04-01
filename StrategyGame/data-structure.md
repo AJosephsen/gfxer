@@ -90,6 +90,7 @@ classDiagram
     Settlement <|-- PlainsSettlement
     Settlement <|-- BeachSettlement
     Structure <|-- LumberCamp
+    Structure <|-- FishingCamp
     Terrain <|-- Plains
     Terrain <|-- Forest
     Terrain <|-- Beach
@@ -113,7 +114,7 @@ Step-5 intent:
 - `Farm` is a concrete `Structure` subtype.
 - `Settlement` is an abstract `Structure` subtype.
 - `PlainsSettlement` and `BeachSettlement` are concrete subtypes under `Settlement`.
-- `LumberCamp` is a concrete `Structure` subtype.
+- `LumberCamp` and `FishingCamp` are concrete `Structure` subtypes.
 - `CardSlot<TCard>` is generic, with `TCard` constrained to inherit from `Card`.
 - `UnionCardSlot<TCard1,TCard2>` is a C#-friendly union slot where both generic types inherit from `Card`.
 - Concrete terrain implementations are `Plains`, `Forest`, `Beach`, and `Hill`.
