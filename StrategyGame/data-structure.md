@@ -34,6 +34,7 @@ classDiagram
     }
 
     class Farm
+    class Settlement
     class LumberCamp
     class FishingCamp
 
@@ -59,6 +60,7 @@ classDiagram
     Card <|-- Terrain
     Card <|-- Structure
     Structure <|-- Farm
+    Structure <|-- Settlement
     Structure <|-- LumberCamp
     Structure <|-- FishingCamp
     Terrain <|-- Plains
@@ -76,6 +78,7 @@ Step-4 intent:
 - `Terrain` is abstract and inherits from `Card`.
 - `Structure` is abstract and inherits from `Card` as the base for building-like cards.
 - `Farm` is a concrete `Structure` subtype.
+- `Settlement` is a concrete `Structure` subtype.
 - `LumberCamp` and `FishingCamp` are concrete `Structure` subtypes.
 - `CardSlot<TCard>` is generic, with `TCard` constrained to inherit from `Card`.
 - Concrete terrain implementations are `Plains`, `Forest`, `Beach`, and `Hill`.
@@ -92,6 +95,7 @@ Step-4 intent:
 | Terrain (abstract) | Conceptual parent type for concrete terrain variants. Not a direct card in hand. |
 | Structure (abstract) | Conceptual parent type for building-like cards. Carries shared placement constraints. |
 | Farm | Concrete Structure implementation for agriculture-focused development on plains terrain. |
+| Settlement | Concrete Structure implementation for population and habitation development. |
 | Lumber Camp | Concrete Structure implementation for forestry-focused development on forest terrain. |
 | Fishing Camp | Concrete Structure implementation for coastal development on beach terrain. |
 | Plains | Concrete Terrain implementation. Fertile baseline terrain for agriculture-focused development. |
