@@ -43,6 +43,9 @@ classDiagram
         <<abstract>>
     }
     class PlainsSettlement
+    class PlainsTown
+    class PlainsCity
+    class PlainsMetropolis
     class BeachSettlement
     class LumberCamp
     class FishingCamp
@@ -74,6 +77,9 @@ classDiagram
     Structure <|-- Farm
     Structure <|-- Settlement
     Settlement <|-- PlainsSettlement
+    PlainsSettlement <|-- PlainsTown
+    PlainsTown <|-- PlainsCity
+    PlainsCity <|-- PlainsMetropolis
     Settlement <|-- BeachSettlement
     Structure <|-- LumberCamp
     BeachStructure <|-- BeachSettlement
@@ -97,6 +103,7 @@ Step-4 intent:
 - `Farm` is a concrete `Structure` subtype.
 - `Settlement` is an abstract `Structure` subtype.
 - `PlainsSettlement` and `BeachSettlement` are concrete subtypes under `Settlement`.
+- `PlainsTown`, `PlainsCity`, and `PlainsMetropolis` are derived upgrade classes under `PlainsSettlement`.
 - `LumberCamp` is a concrete `Structure` subtype.
 - `BeachSettlement` and `FishingCamp` are concrete subtypes under `BeachStructure`.
 - `CardSlot<TCard>` is generic, with `TCard` constrained to inherit from `Card`.
@@ -118,6 +125,9 @@ Step-4 intent:
 | Farm | Concrete Structure implementation for agriculture-focused development on plains terrain. |
 | Settlement (abstract) | Shared settlement base type for terrain-specific settlement variants. |
 | Plains Settlement | Settlement implementation that can only be placed on Plains. Visually and mechanically tied to plains terrain. |
+| Plains Town | First upgrade tier derived from Plains Settlement. |
+| Plains City | Second upgrade tier derived from Plains Town. |
+| Plains Metropolis | Final upgrade tier derived from Plains City. |
 | Beach Settlement | Settlement implementation that can only be placed on Beach. Visually and mechanically tied to beach terrain. |
 | Lumber Camp | Concrete Structure implementation for forestry-focused development on forest terrain. |
 | Fishing Camp | Concrete Structure implementation for coastal development on beach terrain. |
@@ -171,8 +181,8 @@ flowchart LR
 
 Suggested modeling approach:
 
-- Keep one slot identity and upgrade the card in-place: `CardSlot<Settlement>`.
-- Use a discriminator on settlement cards, for example `settlementTier: plains1|plains2|plains3|plains4`.
+- Keep one slot identity and upgrade the card in-place: `CardSlot<PlainsSettlement>`.
+- Model upgrade tiers as derived classes: `PlainsSettlement -> PlainsTown -> PlainsCity -> PlainsMetropolis`.
 - Preserve terrain lock across all tiers: `allowedTerrains = [Plains]`.
 
 Suggested upgrade gates:
@@ -183,10 +193,10 @@ Suggested upgrade gates:
 
 Suggested JSON direction (card-definition level):
 
-- `plains-settlement-t1`: `upgradesTo = plains-settlement-t2`
-- `plains-settlement-t2`: `upgradesTo = plains-settlement-t3`
-- `plains-settlement-t3`: `upgradesTo = plains-settlement-t4`
-- `plains-settlement-t4`: terminal tier (no `upgradesTo`)
+- `plains-settlement`: class = `PlainsSettlement`, upgradesTo = `plains-town`
+- `plains-town`: class = `PlainsTown`, upgradesTo = `plains-city`
+- `plains-city`: class = `PlainsCity`, upgradesTo = `plains-metropolis`
+- `plains-metropolis`: class = `PlainsMetropolis`, terminal tier (no `upgradesTo`)
 
 ---
 
