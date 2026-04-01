@@ -37,7 +37,7 @@ classDiagram
         +isPlaceholder: bool = true
     }
 
-    class BoardSlot {
+    class CardSlot {
         +index: int
         +currentCard: Card
     }
@@ -48,12 +48,12 @@ classDiagram
     Terrain <|-- ForestTerrain
     Terrain <|-- BeachTerrain
     Terrain <|-- HillTerrain
-    BoardSlot *-- Card : currentCard (always present)
+    CardSlot *-- Card : currentCard (always present)
 ```
 
 Step-2 intent:
 
-- `BoardSlot.currentCard` is never null.
+- `CardSlot.currentCard` is never null.
 - New slots are initialized with `EmptyCard`.
 - `Terrain` is abstract and inherits from `Card`.
 - Concrete terrain implementations are `PlainsTerrain`, `ForestTerrain`, `BeachTerrain`, and `HillTerrain`.
