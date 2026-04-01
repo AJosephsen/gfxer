@@ -10,9 +10,9 @@ Core intent:
 
 ---
 
-## UML Class Diagram (Step 4: Structure Base Class)
+## UML Class Diagram (Step 5: Game, Table, Inventory)
 
-This UML step models the no-null invariant, concrete terrain subclasses, a structure base class, and a table that contains four terrain slots.
+This UML step models the no-null invariant, concrete terrain subclasses, a structure base class, and a game aggregate that owns a table and generic inventory resources.
 
 ```mermaid
 classDiagram
@@ -69,6 +69,19 @@ classDiagram
         +terrainSlots: CardSlot~Terrain~[4]
     }
 
+    class Inventory {
+        +resources: ResourceStack[]
+    }
+
+    class ResourceStack {
+        +kind: string
+        +amount: int
+    }
+
+    class Game {
+        +id: string
+    }
+
     Card <|-- EmptyCard
     Card <|-- Terrain
     Card <|-- Structure
@@ -86,9 +99,12 @@ classDiagram
     Plains *-- UnionCardSlot~PlainsSettlement,Farm~ : plainsStructureSlot
     Beach *-- UnionCardSlot~BeachSettlement,FishingCamp~ : beachStructureSlot
     Table *-- "4" CardSlot~Terrain~ : terrainSlots
+    Inventory *-- "0..*" ResourceStack : resources
+    Game *-- Table : table
+    Game *-- Inventory : inventory
 ```
 
-Step-4 intent:
+Step-5 intent:
 
 - `CardSlot.currentCard` is never null.
 - New slots are initialized with `EmptyCard`.
@@ -104,6 +120,8 @@ Step-4 intent:
 - `Plains` owns a `UnionCardSlot<PlainsSettlement,Farm>`.
 - `Beach` owns a `UnionCardSlot<BeachSettlement,FishingCamp>`.
 - A `Table` owns exactly four terrain slots, represented as `CardSlot<Terrain>`.
+- A `Game` owns a `Table` and an `Inventory`.
+- `Inventory` stores generic resources as `ResourceStack(kind, amount)` without fixed resource enums yet.
 - Future steps can add concrete structure subclasses with terrain-based placement constraints.
 
 ---
@@ -116,6 +134,9 @@ Step-4 intent:
 | Terrain (abstract) | Conceptual parent type for concrete terrain variants. Not a direct card in hand. |
 | Structure (abstract) | Conceptual parent type for building-like cards. Carries shared placement constraints. |
 | UnionCardSlot<TCard1, TCard2> | Generic C#-style union slot that accepts either of two Card subtypes in one slot. |
+| Game | Aggregate root that owns the active table and inventory state. |
+| Inventory | Container for player resources in generic key/value stack form. |
+| ResourceStack | A single generic resource entry with a kind identifier and amount. |
 | Farm | Concrete Structure implementation for agriculture-focused development on plains terrain. |
 | Settlement (abstract) | Shared settlement base type for terrain-specific settlement variants. |
 | Plains Settlement | Settlement implementation that can only be placed on Plains. Visually and mechanically tied to plains terrain. |
