@@ -23,6 +23,11 @@ classDiagram
         +tags: string[]
     }
 
+    class Terrain {
+        <<abstract>>
+        +terrainType: string
+    }
+
     class EmptyCard {
         +isPlaceholder: bool = true
     }
@@ -33,6 +38,7 @@ classDiagram
     }
 
     Card <|-- EmptyCard
+    Card <|-- Terrain
     BoardSlot *-- Card : currentCard (always present)
 ```
 
@@ -40,6 +46,7 @@ Step-1 intent:
 
 - `BoardSlot.currentCard` is never null.
 - New slots are initialized with `EmptyCard`.
+- `Terrain` is abstract and inherits from `Card`.
 - Future steps can replace `EmptyCard` with `LandCard` and then add terrain/building-specific subclasses.
 
 ---
