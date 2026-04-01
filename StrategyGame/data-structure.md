@@ -20,6 +20,8 @@ Core intent:
 | Forest | Concrete Terrain implementation. Wood-focused terrain for forestry and industry chains. |
 | Beach | Concrete Terrain implementation. Coastal terrain for trade and shoreline building chains. |
 | Hill | Concrete Terrain implementation. Elevated terrain for pasture, defense, and upland chains. |
+| Plains Settlement | Settlement implementation that can only be placed on Plains. Visually and mechanically tied to plains terrain. |
+| Beach Settlement | Settlement implementation that can only be placed on Beach. Visually and mechanically tied to beach terrain. |
 
 Note: The deck is the exploration mechanism that yields terrain cards. Playing those cards converts Empty slots into controlled territory.
 Note: In JSON, concrete terrain cards use type = land and then specify terrain = Plains, Forest, Beach, or Hill.
@@ -37,13 +39,11 @@ flowchart TD
     B --> F[Hill]
 
     C --> G[Farm]
-    C --> H[Settlement]
+    C --> H[Plains Settlement]
     D --> I[Lumber Camp]
-    D --> H
     E --> J[Fishing Camp]
-    E --> H
+    E --> L[Beach Settlement]
     F --> K[Sheep Pasture]
-    F --> H
 ```
 
 Interpretation:
@@ -51,7 +51,7 @@ Interpretation:
 - Empty is the root node and initial state of board ownership potential.
 - Terrain is abstract and documents the transition rule: only terrain cards can fill Empty.
 - Plains, Forest, Beach, and Hill are concrete implemented terrain outcomes.
-- Building layer is shown as current implementation rules: Farm on Plains, Lumber Camp on Forest, Fishing Camp on Beach, Sheep Pasture on Hill, and Settlement on any non-empty/non-wasteland terrain.
+- Building layer is shown as current implementation rules: Farm on Plains, Lumber Camp on Forest, Fishing Camp on Beach, Sheep Pasture on Hill, Plains Settlement on Plains, and Beach Settlement on Beach.
 
 ---
 
@@ -61,6 +61,7 @@ Interpretation:
 2. Only a land card can replace Empty.
 3. A land card resolves to one concrete terrain type: Plains, Forest, Beach, or Hill.
 4. Once a terrain exists, buildings can be placed only if their terrain requirements are met.
+5. Settlement placement is terrain-specific: Plains Settlement only on Plains, Beach Settlement only on Beach.
 
 This gives a clear ownership pipeline:
 
@@ -84,6 +85,11 @@ The catalog remains card-definition driven. For placement tech tree purposes, th
 - allowedTerrains (building): where this building may be placed.
 - playCost (building): non-flux resource cost paid when placing.
 
+Settlement-specific examples:
+
+- plains-settlement: type = building, allowedTerrains = [Plains]
+- beach-settlement: type = building, allowedTerrains = [Beach]
+
 ---
 
 ## Placement-Oriented Example
@@ -96,7 +102,7 @@ Gameplay meaning:
 
 - You explored and drew a land option from the deck.
 - You spent flux to place it on Empty.
-- The slot is now controlled coastal land, enabling beach-compatible building chains.
+- The slot is now controlled coastal land, enabling beach-compatible building chains such as Beach Settlement.
 
 ---
 
