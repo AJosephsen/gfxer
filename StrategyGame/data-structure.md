@@ -33,11 +33,6 @@ classDiagram
         +allowedTerrains: string[]
     }
 
-    class BeachStructure {
-        <<abstract>>
-        +beachKind: beachSettlement|fishingCamp
-    }
-
     class PlainsStructure {
         <<abstract>>
         +plainsKind: farm|plainsSettlement
@@ -60,7 +55,7 @@ classDiagram
     }
     class Forest
     class Beach {
-        +beachStructureSlot: CardSlot~BeachStructure~
+        +beachStructureSlot: UnionCardSlot~BeachSettlement,FishingCamp~
     }
     class Hill
 
@@ -73,6 +68,11 @@ classDiagram
         +currentCard: TCard
     }
 
+    class UnionCardSlot~TCard1,TCard2~ {
+        +index: int
+        +currentCard: Card
+    }
+
     class Table {
         +terrainSlots: CardSlot~Terrain~[4]
     }
@@ -80,7 +80,6 @@ classDiagram
     Card <|-- EmptyCard
     Card <|-- Terrain
     Card <|-- Structure
-    Structure <|-- BeachStructure
     Structure <|-- PlainsStructure
     Structure <|-- Farm
     Structure <|-- Settlement
@@ -92,15 +91,14 @@ classDiagram
     PlainsCity <|-- PlainsMetropolis
     Settlement <|-- BeachSettlement
     Structure <|-- LumberCamp
-    BeachStructure <|-- BeachSettlement
-    BeachStructure <|-- FishingCamp
     Terrain <|-- Plains
     Terrain <|-- Forest
     Terrain <|-- Beach
     Terrain <|-- Hill
     CardSlot~TCard~ *-- TCard : currentCard (always present)
+    CardSlot~TCard~ <|-- UnionCardSlot~TCard1,TCard2~
     Plains *-- CardSlot~PlainsStructure~ : plainsStructureSlot
-    Beach *-- CardSlot~BeachStructure~ : beachStructureSlot
+    Beach *-- UnionCardSlot~BeachSettlement,FishingCamp~ : beachStructureSlot
     Table *-- "4" CardSlot~Terrain~ : terrainSlots
 ```
 
@@ -110,18 +108,17 @@ Step-4 intent:
 - New slots are initialized with `EmptyCard`.
 - `Terrain` is abstract and inherits from `Card`.
 - `Structure` is abstract and inherits from `Card` as the base for building-like cards.
-- `BeachStructure` is an abstract `Structure` subtype used for beach-specific occupants.
 - `PlainsStructure` is an abstract `Structure` subtype used for plains-specific occupants.
 - `Farm` is a concrete `Structure` subtype.
 - `Settlement` is an abstract `Structure` subtype.
 - `PlainsSettlement` and `BeachSettlement` are concrete subtypes under `Settlement`.
 - `PlainsTown`, `PlainsCity`, and `PlainsMetropolis` are derived upgrade classes under `PlainsSettlement`.
 - `LumberCamp` is a concrete `Structure` subtype.
-- `BeachSettlement` and `FishingCamp` are concrete subtypes under `BeachStructure`.
 - `CardSlot<TCard>` is generic, with `TCard` constrained to inherit from `Card`.
+- `UnionCardSlot<TCard1,TCard2>` is a C#-friendly union slot where both generic types inherit from `Card`.
 - Concrete terrain implementations are `Plains`, `Forest`, `Beach`, and `Hill`.
 - `Plains` owns a `CardSlot<PlainsStructure>`, enabling a discriminated choice between `Farm` and `PlainsSettlement`.
-- `Beach` owns a `CardSlot<BeachStructure>`, enabling a discriminated choice between `BeachSettlement` and `FishingCamp`.
+- `Beach` owns a `UnionCardSlot<BeachSettlement,FishingCamp>`.
 - A `Table` owns exactly four terrain slots, represented as `CardSlot<Terrain>`.
 - Future steps can add concrete structure subclasses with terrain-based placement constraints.
 
@@ -135,7 +132,7 @@ Step-4 intent:
 | Terrain (abstract) | Conceptual parent type for concrete terrain variants. Not a direct card in hand. |
 | Structure (abstract) | Conceptual parent type for building-like cards. Carries shared placement constraints. |
 | PlainsStructure (abstract) | Plains-only structure base, used as the discriminated slot type for farm/settlement placement. |
-| BeachStructure (abstract) | Beach-only structure base, used as the discriminated slot type for coastal placement. |
+| UnionCardSlot<TCard1, TCard2> | Generic C#-style union slot that accepts either of two Card subtypes in one slot. |
 | Farm | Concrete Structure implementation for agriculture-focused development on plains terrain. |
 | Settlement (abstract) | Shared settlement base type for terrain-specific settlement variants. |
 | Plains Settlement | Settlement implementation that can only be placed on Plains. Visually and mechanically tied to plains terrain. |
