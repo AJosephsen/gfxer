@@ -10,9 +10,9 @@ Core intent:
 
 ---
 
-## UML Class Diagram (Step 2: Terrain Subclasses)
+## UML Class Diagram (Step 3: Terrain Table Slots)
 
-This UML step models the no-null invariant and adds concrete terrain subclasses under abstract `Terrain`.
+This UML step models the no-null invariant, concrete terrain subclasses, and a table that contains four terrain slots.
 
 ```mermaid
 classDiagram
@@ -37,9 +37,13 @@ classDiagram
         +isPlaceholder: bool = true
     }
 
-    class CardSlot {
+    class CardSlot~TCard~ {
         +index: int
-        +currentCard: Card
+        +currentCard: TCard
+    }
+
+    class Table {
+        +terrainSlots: CardSlot~Terrain~[4]
     }
 
     Card <|-- EmptyCard
@@ -48,15 +52,18 @@ classDiagram
     Terrain <|-- ForestTerrain
     Terrain <|-- BeachTerrain
     Terrain <|-- HillTerrain
-    CardSlot *-- Card : currentCard (always present)
+    CardSlot~TCard~ *-- TCard : currentCard (always present)
+    Table *-- "4" CardSlot~Terrain~ : terrainSlots
 ```
 
-Step-2 intent:
+Step-3 intent:
 
 - `CardSlot.currentCard` is never null.
 - New slots are initialized with `EmptyCard`.
 - `Terrain` is abstract and inherits from `Card`.
+- `CardSlot<TCard>` is generic, with `TCard` constrained to inherit from `Card`.
 - Concrete terrain implementations are `PlainsTerrain`, `ForestTerrain`, `BeachTerrain`, and `HillTerrain`.
+- A `Table` owns exactly four terrain slots, represented as `CardSlot<Terrain>`.
 - Future steps can add building subclasses with terrain-based placement constraints.
 
 ---
