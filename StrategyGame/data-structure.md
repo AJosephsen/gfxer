@@ -38,9 +38,6 @@ classDiagram
         <<abstract>>
     }
     class PlainsSettlement
-    class PlainsTown
-    class PlainsCity
-    class PlainsMetropolis
     class BeachSettlement
     class LumberCamp
     class FishingCamp
@@ -78,9 +75,6 @@ classDiagram
     Structure <|-- Farm
     Structure <|-- Settlement
     Settlement <|-- PlainsSettlement
-    PlainsSettlement <|-- PlainsTown
-    PlainsTown <|-- PlainsCity
-    PlainsCity <|-- PlainsMetropolis
     Settlement <|-- BeachSettlement
     Structure <|-- LumberCamp
     Terrain <|-- Plains
@@ -103,7 +97,6 @@ Step-4 intent:
 - `Farm` is a concrete `Structure` subtype.
 - `Settlement` is an abstract `Structure` subtype.
 - `PlainsSettlement` and `BeachSettlement` are concrete subtypes under `Settlement`.
-- `PlainsTown`, `PlainsCity`, and `PlainsMetropolis` are derived upgrade classes under `PlainsSettlement`.
 - `LumberCamp` is a concrete `Structure` subtype.
 - `CardSlot<TCard>` is generic, with `TCard` constrained to inherit from `Card`.
 - `UnionCardSlot<TCard1,TCard2>` is a C#-friendly union slot where both generic types inherit from `Card`.
@@ -126,9 +119,6 @@ Step-4 intent:
 | Farm | Concrete Structure implementation for agriculture-focused development on plains terrain. |
 | Settlement (abstract) | Shared settlement base type for terrain-specific settlement variants. |
 | Plains Settlement | Settlement implementation that can only be placed on Plains. Visually and mechanically tied to plains terrain. |
-| Plains Town | First upgrade tier derived from Plains Settlement. |
-| Plains City | Second upgrade tier derived from Plains Town. |
-| Plains Metropolis | Final upgrade tier derived from Plains City. |
 | Beach Settlement | Settlement implementation that can only be placed on Beach. Visually and mechanically tied to beach terrain. |
 | Lumber Camp | Concrete Structure implementation for forestry-focused development on forest terrain. |
 | Fishing Camp | Concrete Structure implementation for coastal development on beach terrain. |
@@ -166,38 +156,6 @@ Interpretation:
 - Terrain is abstract and documents the transition rule: only terrain cards can fill Empty.
 - Plains, Forest, Beach, and Hill are concrete implemented terrain outcomes.
 - Building layer is shown as current implementation rules: Farm on Plains, Lumber Camp on Forest, Fishing Camp on Beach, Sheep Pasture on Hill, Plains Settlement on Plains, and Beach Settlement on Beach.
-
----
-
-## Suggested Plains Settlement Upgrade Path
-
-Proposed staged evolution for plains habitation:
-
-```mermaid
-flowchart LR
-    A[Plains Settlement\nTier 1] --> B[Town\nTier 2]
-    B --> C[City\nTier 3]
-    C --> D[Metropolis\nTier 4]
-```
-
-Suggested modeling approach:
-
-- Keep one slot identity and upgrade the card in-place: `CardSlot<PlainsSettlement>`.
-- Model upgrade tiers as derived classes: `PlainsSettlement -> PlainsTown -> PlainsCity -> PlainsMetropolis`.
-- Preserve terrain lock across all tiers: `allowedTerrains = [Plains]`.
-
-Suggested upgrade gates:
-
-1. Plains Settlement -> Town: requires local food baseline (for example Farm adjacency).
-2. Town -> City: requires sustained production and higher population threshold.
-3. City -> Metropolis: requires advanced resource mix and stability check.
-
-Suggested JSON direction (card-definition level):
-
-- `plains-settlement`: class = `PlainsSettlement`, upgradesTo = `plains-town`
-- `plains-town`: class = `PlainsTown`, upgradesTo = `plains-city`
-- `plains-city`: class = `PlainsCity`, upgradesTo = `plains-metropolis`
-- `plains-metropolis`: class = `PlainsMetropolis`, terminal tier (no `upgradesTo`)
 
 ---
 
