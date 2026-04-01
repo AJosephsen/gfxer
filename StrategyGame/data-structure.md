@@ -158,6 +158,38 @@ Interpretation:
 
 ---
 
+## Suggested Plains Settlement Upgrade Path
+
+Proposed staged evolution for plains habitation:
+
+```mermaid
+flowchart LR
+    A[Plains Settlement\nTier 1] --> B[Town\nTier 2]
+    B --> C[City\nTier 3]
+    C --> D[Metropolis\nTier 4]
+```
+
+Suggested modeling approach:
+
+- Keep one slot identity and upgrade the card in-place: `CardSlot<Settlement>`.
+- Use a discriminator on settlement cards, for example `settlementTier: plains1|plains2|plains3|plains4`.
+- Preserve terrain lock across all tiers: `allowedTerrains = [Plains]`.
+
+Suggested upgrade gates:
+
+1. Plains Settlement -> Town: requires local food baseline (for example Farm adjacency).
+2. Town -> City: requires sustained production and higher population threshold.
+3. City -> Metropolis: requires advanced resource mix and stability check.
+
+Suggested JSON direction (card-definition level):
+
+- `plains-settlement-t1`: `upgradesTo = plains-settlement-t2`
+- `plains-settlement-t2`: `upgradesTo = plains-settlement-t3`
+- `plains-settlement-t3`: `upgradesTo = plains-settlement-t4`
+- `plains-settlement-t4`: terminal tier (no `upgradesTo`)
+
+---
+
 ## Minimal Placement Rules
 
 1. A board slot begins as Empty.
